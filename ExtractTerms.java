@@ -32,6 +32,8 @@ public class ExtractTerms {
         // Read descriptions.txt and store relevant descriptions in maps
         Map<String, String> fsnDescriptions = new HashMap<>();
         Map<String, String> termDescriptions = new HashMap<>();
+        Map<String, String> termConcepts = new HashMap<>();
+
         try (BufferedReader br = new BufferedReader(new FileReader(descriptionsFile))) {
             String line = br.readLine(); // Skip header
             while ((line = br.readLine()) != null) {
@@ -40,15 +42,14 @@ public class ExtractTerms {
                     if (values[6].equals("900000000000003001")) {
                         fsnDescriptions.put(values[4], values[7]);
                     } else if (values[6].equals("900000000000013009")) {
-                        termDescriptions.put(values[4], values[7]);
+                        termDescriptions.put(values[0], values[7]);
+                        termConcepts.put(values[4], values[0]);
                     }
                 }
             }
         }
 
         //  Read prefs.txt and filter relevant terms
-        // TODO: Needs to pick up preferred terms
-        
         Map<String, String> filteredTerms = new HashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(prefsFile))) {
             String line = br.readLine(); // Skip header
@@ -70,7 +71,8 @@ public class ExtractTerms {
                 String id = entry.getKey();
                 String active = entry.getValue();
                 String fsn = fsnDescriptions.get(id);
-                String term = termDescriptions.get(id);
+                String desc = termConcepts.get(id);
+                String term = termDescriptions.get(desc);
                 if (fsn != null && term != null) {
                     writer.write(id + "\t" + active + "\t" + fsn + "\t" + term + "\n");
                 }

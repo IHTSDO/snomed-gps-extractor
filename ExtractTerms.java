@@ -10,9 +10,9 @@ public class ExtractTerms {
     public static void main(String[] args) throws IOException {
 
         // Input file paths
-        String conceptsFile = "concepts.txt";
-        String descriptionsFile = "descriptions.txt";
-        String prefsFile = "prefs.txt";
+        String conceptsFile = args[0];
+        String descriptionsFile = args[1];
+        String prefsFile = args[2];
 
         // Output file path
         String outputFile = "output.tsv";

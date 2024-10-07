@@ -9,13 +9,15 @@ public class ExtractTerms {
 
     public static void main(String[] args) throws IOException {
 
+        if (args.length < 4) {
+            System.out.println("Usage: java ExtractTerms <concepts-rf2-file> <descriptions-rf2-file> <languagePreferences-rf2-file> <output-file>");
+            return;
+        }
         // Input file paths
         String conceptsFile = args[0];
         String descriptionsFile = args[1];
         String prefsFile = args[2];
-
-        // Output file path
-        String outputFile = "output.tsv";
+        String outputFile = args[3];
 
         // Read concepts.txt and store active concepts in a map
         Map<String, String> activeConcepts = new HashMap<>();

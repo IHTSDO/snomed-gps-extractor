@@ -1,0 +1,7 @@
+id	active	fsn	term
+285887000	1	Unable to use kettle (finding)	Unable to use kettle
+34693000	1	Product containing zalcitabine (medicinal product)	Zalcitabine-containing product
+167325005	1	Urine urobilinogen = + (finding)	Urine urobilinogen = +
+286731006	1	Obstinate character (finding)	Obstinate character
+467279000	1	Bone holding forceps (physical object)	Bone holding forceps
+776935006	1	Product containing only nizatidine (medicinal product)	Nizatidine only product

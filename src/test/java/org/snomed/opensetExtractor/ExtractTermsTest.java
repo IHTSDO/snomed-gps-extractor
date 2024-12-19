@@ -5,7 +5,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.*;
 import java.nio.file.*;
 import static org.junit.jupiter.api.Assertions.*;
-import org.ihtsdo.opensetExtractor.ExtractTerms;
+import org.snomed.opensetExtractor.ExtractTerms;
 
 class ExtractTermsTest {
         @TempDir

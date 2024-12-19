@@ -90,4 +90,4 @@ The generated output file is tab-separated (TSV) and contains the following colu
   - Invalid semantic tags are specified
 
 ## License
-Apache, version 2.0
+Apache, version 2.0 - see LICENSE file

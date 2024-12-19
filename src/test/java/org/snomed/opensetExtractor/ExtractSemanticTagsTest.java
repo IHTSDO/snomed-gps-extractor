@@ -5,7 +5,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.*;
 import java.nio.file.*;
 import static org.junit.jupiter.api.Assertions.*;
-import org.ihtsdo.opensetExtractor.ExtractSemanticTags;
+import org.snomed.opensetExtractor.ExtractSemanticTags;
 
 class ExtractSemanticTagsTest {
     @TempDir

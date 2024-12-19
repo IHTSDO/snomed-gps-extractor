@@ -43,7 +43,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>org.ihtsdo.opensetExtractor.ExtractTerms</mainClass>
+                            <mainClass>org.snomed.opensetExtractor.ExtractTerms</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

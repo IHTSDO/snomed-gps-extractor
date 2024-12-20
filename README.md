@@ -10,7 +10,7 @@ This tool provides two main functionalities:
 
 ## Prerequisites
 
-- Java Runtime Environment (JRE) 8 or higher
+- Java Runtime Environment (JRE) 17 or higher
 - SNOMED CT release files (RF2 format)
   - Concept file
   - Description file
@@ -85,10 +85,10 @@ The tool expects SNOMED CT RF2 release files in their standard format:
 
 ### Output Format
 The generated output file is tab-separated (TSV) and contains the following columns:
-1. SCTID (SNOMED CT Identifier)
-2. Active flag
-3. FSN (Fully Specified Name)
-4. Preferred Term in International English
+1. id (SNOMED CT Concept Identifier)
+2. active (Active flag)
+3. fsn (Fully Specified Name)
+4. term (Preferred Term in International English)
 
 Example output:
 ```

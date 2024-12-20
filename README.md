@@ -71,6 +71,7 @@ Common semantic tags :
 - substance
 - body structure
 - observable entity
+
 More information on semantic tags can be found here - https://confluence.ihtsdotools.org/display/DOCEG/Semantic+Tag
 
 

@@ -1,11 +1,12 @@
-package org.snomed.opensetExtractor;
+package org.snomed.opensetextractor;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
+import org.snomed.opensetextractor.ExtractTerms;
+
 import java.io.*;
 import java.nio.file.*;
 import static org.junit.jupiter.api.Assertions.*;
-import org.snomed.opensetExtractor.ExtractTerms;
 
 class ExtractTermsTest {
         @TempDir
@@ -29,15 +30,13 @@ class ExtractTermsTest {
                 Files.write(conceptsFile, conceptsContent.getBytes());
 
                 // Create descriptions file
-                String descriptionsContent = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\n"
-                                +
+                String descriptionsContent = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\n" +
                                 "456\t20240101\t1\t900000000000207008\t123\ten\t900000000000003001\tHeart (FSN)\n" +
                                 "789\t20240101\t1\t900000000000207008\t123\ten\t900000000000013009\tHeart\n";
                 Files.write(descriptionsFile, descriptionsContent.getBytes());
 
                 // Create preferences file
-                String preferencesContent = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId\tacceptabilityId\n"
-                                +
+                String preferencesContent = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId\tacceptabilityId\n" +
                                 "999\t20240101\t1\t900000000000207008\t900000000000509007\t789\t900000000000548007\n";
                 Files.write(preferencesFile, preferencesContent.getBytes());
         }
@@ -55,8 +54,8 @@ class ExtractTermsTest {
 
                 assertTrue(Files.exists(outputFile));
                 String content = Files.readString(outputFile);
-                assertTrue(content.contains("Description ID\tTerm\tConcept ID\tFSN"));
-                assertTrue(content.contains("789\tHeart\t123\tHeart (FSN)"));
+                assertTrue(content.contains("id\tactive\tfsn\tterm"));
+                assertTrue(content.contains("123\t1\tHeart (FSN)\tHeart"));
         }
 
         @Test
@@ -96,7 +95,7 @@ class ExtractTermsTest {
                 ExtractTerms.main(args);
 
                 assertTrue(Files.exists(outputFile));
-                assertEquals("Description ID\tTerm\tConcept ID\tFSN\n",
+                assertEquals("id\tactive\tfsn\tterm\n",
                                 Files.readString(outputFile));
         }
 }

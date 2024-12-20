@@ -1,4 +1,4 @@
-package org.snomed.opensetExtractor;
+package org.snomed.opensetextractor;
 
 import java.io.*;
 import java.nio.file.*;
@@ -19,14 +19,19 @@ public class ExtractSemanticTags {
             validateInputFile(inputFile);
             validateSemanticTags(semanticTags);
 
-            String outputFile = generateOutputFileName(String.join("_", semanticTags));
-            processFile(inputFile, outputFile, semanticTags);
+            Path inputPath = Paths.get(inputFile);
+            Path outputPath = inputPath.getParent() == null 
+                ? Paths.get(generateOutputFileName(String.join("_", semanticTags)))
+                : inputPath.getParent().resolve(generateOutputFileName(String.join("_", semanticTags)));
+            processFile(inputFile, outputPath.toString(), semanticTags);
 
         } catch (IllegalArgumentException e) {
             System.err.println("Error: " + e.getMessage());
             printUsage();
+            throw e;
         } catch (IOException e) {
             System.err.println("Error processing files: " + e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -61,8 +66,7 @@ public class ExtractSemanticTags {
     }
 
     private static String generateOutputFileName(String semanticTag) {
-        String baseFileName = semanticTag + OUTPUT_FILE_SUFFIX;
-        return sanitizeFileName(baseFileName);
+        return sanitizeFileName(semanticTag + OUTPUT_FILE_SUFFIX);
     }
 
     private static String sanitizeFileName(String fileName) {
@@ -70,6 +74,22 @@ public class ExtractSemanticTags {
     }
 
     private static void processFile(String inputFile, String outputFile, String[] semanticTags) throws IOException {
+        Path outputPath = Paths.get(outputFile);
+        
+        // Delete the path if it exists (whether file or directory)
+        if (Files.exists(outputPath)) {
+            if (Files.isDirectory(outputPath)) {
+                Files.delete(outputPath);  // Will only delete if directory is empty
+            } else {
+                Files.deleteIfExists(outputPath);
+            }
+        }
+        
+        // Create parent directories if needed
+        if (outputPath.getParent() != null) {
+            Files.createDirectories(outputPath.getParent());
+        }
+
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
                 BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
 
@@ -96,8 +116,23 @@ public class ExtractSemanticTags {
     }
 
     private static boolean matchesAnyTag(String column, String[] semanticTags) {
-        for (String tag : semanticTags) {
-            if (column.contains(tag)) {
+        // Extract the semantic tag from within parentheses at the end of the FSN
+        int lastOpenParen = column.lastIndexOf('(');
+        int lastCloseParen = column.lastIndexOf(')');
+        
+        if (lastOpenParen == -1 || lastCloseParen == -1 || lastOpenParen > lastCloseParen) {
+            return false;
+        }
+        
+        // Extract the tag without parentheses
+        String semanticTag = column.substring(lastOpenParen + 1, lastCloseParen);
+        
+        for (String searchTag : semanticTags) {
+            // Remove quotes if present
+            searchTag = searchTag.replaceAll("^\"|\"$", "");
+            
+            // Exact match only
+            if (semanticTag.equals(searchTag)) {
                 return true;
             }
         }

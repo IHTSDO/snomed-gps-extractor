@@ -1,11 +1,12 @@
-package org.snomed.opensetExtractor;
+package org.snomed.opensetextractor;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
+import org.snomed.opensetextractor.ExtractSemanticTags;
+
 import java.io.*;
 import java.nio.file.*;
 import static org.junit.jupiter.api.Assertions.*;
-import org.snomed.opensetExtractor.ExtractSemanticTags;
 
 class ExtractSemanticTagsTest {
     @TempDir
@@ -14,12 +15,12 @@ class ExtractSemanticTagsTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        // Create a test TSV file
+        // Create a test TSV file with proper FSN format (semantic tags in parentheses)
         inputFile = tempDir.resolve("test_input.tsv");
-        String content = "Description ID\tTerm\tSemantic Tag\n" +
-                "1\tHeart disease\tfinding\n" +
-                "2\tLung cancer\tdisorder\n" +
-                "3\tBlood test\tprocedure\n";
+        String content = "Description ID\tTerm\tFSN\n" +
+                "1\tHeart disease\tHeart disease (finding)\n" +
+                "2\tLung cancer\tLung cancer (disorder)\n" +
+                "3\tBlood test\tBlood test (procedure)\n";
         Files.write(inputFile, content.getBytes());
     }
 
@@ -34,6 +35,7 @@ class ExtractSemanticTagsTest {
         String content = Files.readString(outputFile);
         assertTrue(content.contains("Heart disease"));
         assertFalse(content.contains("Lung cancer"));
+        assertTrue(content.contains("(finding)"));  // Verify the semantic tag is present
     }
 
     @Test
@@ -48,6 +50,8 @@ class ExtractSemanticTagsTest {
         assertTrue(content.contains("Heart disease"));
         assertTrue(content.contains("Lung cancer"));
         assertFalse(content.contains("Blood test"));
+        assertTrue(content.contains("(finding)"));   // Verify the semantic tags are present
+        assertTrue(content.contains("(disorder)"));
     }
 
     @Test

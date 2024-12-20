@@ -1,4 +1,4 @@
-package org.snomed.opensetExtractor;
+package org.snomed.opensetextractor;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -38,13 +38,11 @@ public class ExtractTerms {
             String preferencesFile, String outputFile) throws IOException {
         Map<String, String> activeConcepts = readActiveConcepts(conceptsFile);
         Map<String, String> fsnDescriptions = new HashMap<>();
-        Map<String, String> termDescriptions = new HashMap<>();
-        Map<String, String> termConcepts = new HashMap<>();
-
-        readDescriptions(descriptionsFile, fsnDescriptions, termDescriptions, termConcepts);
-        Map<String, String> filteredTerms = readPreferences(preferencesFile, termDescriptions);
-
-        writeOutput(outputFile, activeConcepts, fsnDescriptions, termDescriptions, termConcepts);
+        Map<String, String> preferredTerms = new HashMap<>();
+        
+        readDescriptions(descriptionsFile, fsnDescriptions, preferredTerms);
+        
+        writeOutput(outputFile, activeConcepts, fsnDescriptions, preferredTerms);
     }
 
     private static boolean validateArgs(String[] args) {
@@ -64,7 +62,7 @@ public class ExtractTerms {
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(TAB_DELIMITER);
                 if (parts.length > ACTIVE_INDEX && ACTIVE_FLAG.equals(parts[ACTIVE_INDEX])) {
-                    concepts.put(parts[CONCEPT_ID_INDEX], line);
+                    concepts.put(parts[CONCEPT_ID_INDEX], ACTIVE_FLAG);  // Store just the active flag
                 }
             }
         }
@@ -73,35 +71,32 @@ public class ExtractTerms {
 
     private static void readDescriptions(String filename,
             Map<String, String> fsnDescriptions,
-            Map<String, String> termDescriptions,
-            Map<String, String> termConcepts) throws IOException {
+            Map<String, String> preferredTerms) throws IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             String line;
             reader.readLine(); // Skip header
             while ((line = reader.readLine()) != null) {
-                processDescriptionLine(line, fsnDescriptions, termDescriptions, termConcepts);
+                processDescriptionLine(line, fsnDescriptions, preferredTerms);
             }
         }
     }
 
     private static void processDescriptionLine(String line,
             Map<String, String> fsnDescriptions,
-            Map<String, String> termDescriptions,
-            Map<String, String> termConcepts) {
+            Map<String, String> preferredTerms) {
         String[] parts = line.split(TAB_DELIMITER);
         if (!isValidDescriptionLine(parts)) {
             return;
         }
 
-        String descriptionId = parts[CONCEPT_ID_INDEX];
+        String conceptId = parts[4];  // Concept ID
         String typeId = parts[TYPE_ID_INDEX];
         String term = parts[TERM_INDEX];
 
         if (FSN_TYPE_ID.equals(typeId)) {
-            fsnDescriptions.put(descriptionId, term);
+            fsnDescriptions.put(conceptId, term);
         } else if (SYNONYM_TYPE_ID.equals(typeId)) {
-            termDescriptions.put(descriptionId, term);
-            termConcepts.put(descriptionId, parts[4]); // Concept ID
+            preferredTerms.put(conceptId, term);
         }
     }
 
@@ -110,67 +105,36 @@ public class ExtractTerms {
                 ACTIVE_FLAG.equals(parts[ACTIVE_INDEX]);
     }
 
-    private static Map<String, String> readPreferences(String filename,
-            Map<String, String> termDescriptions) throws IOException {
-        Map<String, String> preferredTerms = new HashMap<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
-            String line;
-            reader.readLine(); // Skip header
-            while ((line = reader.readLine()) != null) {
-                processPreferenceLine(line, preferredTerms, termDescriptions);
-            }
-        }
-        return preferredTerms;
-    }
-
-    private static void processPreferenceLine(String line,
-            Map<String, String> preferredTerms,
-            Map<String, String> termDescriptions) {
-        String[] parts = line.split(TAB_DELIMITER);
-        if (isValidPreferenceLine(parts)) {
-            String descriptionId = parts[5]; // Reference component ID
-            String term = termDescriptions.get(descriptionId);
-            if (term != null) {
-                preferredTerms.put(descriptionId, term);
-            }
-        }
-    }
-
-    private static boolean isValidPreferenceLine(String[] parts) {
-        return parts.length > 5 &&
-                ACTIVE_FLAG.equals(parts[ACTIVE_INDEX]) &&
-                ACCEPTABILITY_REFSET_ID.equals(parts[4]) && // Reference set ID
-                PREFERRED_ACCEPTABILITY_ID.equals(parts[6]); // Acceptability ID
-    }
-
     private static void writeOutput(String filename,
             Map<String, String> activeConcepts,
             Map<String, String> fsnDescriptions,
-            Map<String, String> termDescriptions,
-            Map<String, String> termConcepts) throws IOException {
+            Map<String, String> preferredTerms) throws IOException {
+        int recordCount = 0;
         try (FileWriter writer = new FileWriter(filename)) {
             writeHeader(writer);
-            for (Map.Entry<String, String> entry : termDescriptions.entrySet()) {
-                String descriptionId = entry.getKey();
-                String conceptId = termConcepts.get(descriptionId);
-                if (activeConcepts.containsKey(conceptId)) {
-                    writeTerm(writer, descriptionId, entry.getValue(),
-                            conceptId, fsnDescriptions.get(conceptId));
-                }
+            for (String conceptId : activeConcepts.keySet()) {
+                String fsn = fsnDescriptions.get(conceptId);
+                String term = preferredTerms.get(conceptId);
+                
+                writeTerm(writer, conceptId, fsn, term);
+                recordCount++;
             }
         }
+        System.out.println("Processing complete. Created " + recordCount + " records.");
     }
 
     private static void writeHeader(FileWriter writer) throws IOException {
-        writer.write("Description ID\tTerm\tConcept ID\tFSN\n");
+        writer.write("id\tactive\tfsn\tterm\n");
     }
 
     private static void writeTerm(FileWriter writer,
-            String descriptionId,
-            String term,
             String conceptId,
-            String fsn) throws IOException {
+            String fsn,
+            String term) throws IOException {
         writer.write(String.format("%s\t%s\t%s\t%s\n",
-                descriptionId, term, conceptId, fsn != null ? fsn : ""));
+                conceptId,
+                "1",  // active (we only store active concepts)
+                fsn != null ? fsn : "",
+                term != null ? term : ""));
     }
 }

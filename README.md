@@ -18,43 +18,52 @@ This tool provides two main functionalities:
 
 ## Usage
 
-### 1. Term Extraction
-
-The `ExtractTerms` class processes SNOMED CT source files and combines them into a single, tab-separated output file.
+### Building the JAR
+The application can be built using Maven:
 
 ```bash
-java ExtractTerms <concepts-file> <descriptions-file> <preferences-file> <output-file>
+mvn clean package
+```
+
+This will create a JAR file in the `target` directory.
+
+### 1. Term Extraction
+
+Run the JAR file with the extract-terms command:
+
+```bash
+java -jar target/opensetextractor*.jar extract-terms <concepts-file> <descriptions-file> <preferences-file> <output-file>
 ```
 
 Parameters:
-- `concepts-file`: Path to the SNOMED CT concepts file
-- `descriptions-file`: Path to the descriptions file
-- `preferences-file`: Path to the language preferences file
+- `concepts-file`: Path and filename of the SNOMED CT concepts file
+- `descriptions-file`: Path and filename of the descriptions file
+- `preferences-file`: Path and filename of the language preferences file
 - `output-file`: Desired name for the output TSV file
 
 Example:
 ```bash
-java ExtractTerms demoFiles/concepts.txt demoFiles/descriptions.txt demoFiles/preferences.txt openSCT.tsv
+java -jar target/opensetextractor*.jar extract-terms demoFiles/concepts.txt demoFiles/descriptions.txt demoFiles/preferences.txt openSCT.tsv
 ```
 
 ### 2. Semantic Tag Filtering
 
-The `ExtractSemanticTags` command allows you to filter terms by their semantic tags (e.g., "finding", "disorder", "procedure").
+Filter terms by semantic tags using:
 
 ```bash
-java ExtractSemanticTags <input-file> <semantic-tag>
+java -jar target/opensetextractor*.jar extract-tags <input-file> <semantic-tag1> <semantic-tag2> <...>
 ```
 
 Parameters:
-- `input-file`: Path to the processed SNOMED CT file (output from ExtractTerms)
-- `semantic-tag`: The semantic tag to filter by (case-sensitive)
+- `input-file`: Path and filename of the processed SNOMED CT file (generally the output from ExtractTerms or the downloaded OpenSet file)
+- `semantic-tag`: The semantic tags to filter by, using the full tag name in quotes, e.g. "disorder" or "medicinal product"
 
 Example:
 ```bash
-java ExtractSemanticTags demoFiles/openSCT.txt finding
+java -jar target/opensetextractor*.jar extract-tags demoFiles/openSCT.txt disorder "medicinal product"
 ```
 
-Common semantic tags:
+Common semantic tags :
 - finding
 - disorder
 - procedure
@@ -62,6 +71,8 @@ Common semantic tags:
 - substance
 - body structure
 - observable entity
+More information on semantic tags can be found here - https://confluence.ihtsdotools.org/display/DOCEG/Semantic+Tag
+
 
 ## File Format
 
@@ -73,15 +84,22 @@ The tool expects SNOMED CT RF2 release files in their standard format:
 
 ### Output Format
 The generated output file is tab-separated (TSV) and contains the following columns:
-- Concept ID
-- Term
-- Semantic Tag
-- Additional metadata (if applicable)
+1. SCTID (SNOMED CT Identifier)
+2. Active flag
+3. FSN (Fully Specified Name)
+4. Preferred Term in International English
+
+Example output:
+```
+id active fsn term
+73211009	1	Diabetes mellitus (disorder)	Diabetes mellitus
+44054006	1 Diabetes mellitus type 2 (disorder) Type 2 diabetes mellitus
+```
 
 ## Notes
 - Ensure all input files are in the correct RF2 format
 - File paths can be relative or absolute
-- The semantic tag filter is case-sensitive
+- The semantic tag filter is case-sensitive and each semantic should be in quotes, e.g. "disorder" or "medicinal product"
 
 ## Error Handling
 - The program will display appropriate error messages if:

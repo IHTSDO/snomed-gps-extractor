@@ -1,8 +1,8 @@
-package org.snomed.opensetextractor;
+package org.snomed.opensetExtractor;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
-import org.snomed.opensetextractor.ExtractTerms;
+import org.snomed.opensetExtractor.ExtractTerms;
 
 import java.io.*;
 import java.nio.file.*;

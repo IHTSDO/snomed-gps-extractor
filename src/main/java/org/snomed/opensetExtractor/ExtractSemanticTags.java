@@ -1,4 +1,4 @@
-package org.snomed.opensetextractor;
+package org.snomed.opensetExtractor;
 
 import java.io.*;
 import java.nio.file.*;

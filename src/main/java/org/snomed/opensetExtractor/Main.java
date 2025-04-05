@@ -1,4 +1,4 @@
-package org.snomed.opensetextractor;
+package org.snomed.opensetExtractor;
 
 public class Main {
     public static void main(String[] args) {

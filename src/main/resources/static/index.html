@@ -5,203 +5,362 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SNOMED GPS Extractor</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-            background-color: #f5f5f7;
-            color: #1d1d1f;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'snomed-blue': '#00A4E4',
+                        'snomed-dark': '#003B5C',
+                    }
+                }
+            }
         }
-
-        .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            text-align: center;
-            color: #1d1d1f;
-            margin-bottom: 2rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d2d2d7;
-            border-radius: 8px;
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
-
-        input[type="file"] {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px dashed #d2d2d7;
-            border-radius: 8px;
-            background: #fafafa;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
-            padding: 1rem;
-            background-color: #0071e3;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        button:hover {
-            background-color: #0077ed;
-        }
-
-        button:disabled {
-            background-color: #999;
-            cursor: not-allowed;
-        }
-
-        .status {
-            margin-top: 1rem;
-            text-align: center;
-            font-size: 0.9rem;
-            color: #666;
-        }
-    </style>
+    </script>
 </head>
 
-<body>
-    <div class="container">
-        <h1>SNOMED GPS Extractor</h1>
-        <form id="filterForm">
-            <div class="form-group">
-                <label for="file">Input File (TSV)</label>
-                <input type="file" id="file" name="file" accept=".tsv,.txt" required>
-            </div>
-
-            <div class="form-group">
-                <label>Active Concepts Only</label>
-                <div style="display: flex; align-items: center;">
-                    <input type="checkbox" id="activeOnly" name="activeOnly" style="width: auto; margin-right: 10px;">
-                    <span>Filter for active concepts only</span>
+<body class="bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-snomed-dark to-snomed-blue text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
+                    <span class="text-snomed-dark text-2xl font-bold">S</span>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-semibold">SNOMED GPS Extractor</h1>
+                    <p class="text-sm text-blue-100">Semantic Tag Filtering Service</p>
                 </div>
             </div>
+        </div>
+    </header>
 
-            <div class="form-group">
-                <label>Select Semantic Tags</label>
-                <div class="tag-groups">
-                    <div class="tag-group">
-                        <h3>Clinical</h3>
-                        <label><input type="checkbox" name="tag" value="body structure"> Body structure</label>
-                        <label><input type="checkbox" name="tag" value="cell"> Cell</label>
-                        <label><input type="checkbox" name="tag" value="cell structure"> Cell structure</label>
-                        <label><input type="checkbox" name="tag" value="morphologic abnormality"> Morphologic
-                            abnormality</label>
-                        <label><input type="checkbox" name="tag" value="finding"> Clinical finding</label>
-                        <label><input type="checkbox" name="tag" value="disorder"> Disorder</label>
-                        <label><input type="checkbox" name="tag" value="organism"> Organism</label>
-                        <label><input type="checkbox" name="tag" value="procedure"> Procedure</label>
-                        <label><input type="checkbox" name="tag" value="regime/therapy"> Regime/Therapy</label>
-                        <label><input type="checkbox" name="tag" value="situation"> Situation</label>
-                        <label><input type="checkbox" name="tag" value="specimen"> Specimen</label>
-                        <label><input type="checkbox" name="tag" value="substance"> Substance</label>
-                    </div>
-                    <div class="tag-group">
-                        <h3>Pharmaceutical / Product</h3>
-                        <label><input type="checkbox" name="tag" value="product"> Product</label>
-                        <label><input type="checkbox" name="tag" value="clinical drug"> Clinical drug</label>
-                        <label><input type="checkbox" name="tag" value="medicinal product"> Medicinal product</label>
-                        <label><input type="checkbox" name="tag" value="medicinal product form"> Medicinal product
-                            form</label>
-                        <label><input type="checkbox" name="tag" value="physical object"> Physical object</label>
-                    </div>
-                    <div class="tag-group">
-                        <h3>Metadata & Qualifiers</h3>
-                        <label><input type="checkbox" name="tag" value="attribute"> Attribute</label>
-                        <label><input type="checkbox" name="tag" value="core metadata concept"> Core metadata
-                            concept</label>
-                        <label><input type="checkbox" name="tag" value="foundation metadata concept"> Foundation
-                            metadata concept</label>
-                        <label><input type="checkbox" name="tag" value="link assertion"> Link assertion</label>
-                        <label><input type="checkbox" name="tag" value="namespace concept"> Namespace concept</label>
-                        <label><input type="checkbox" name="tag" value="qualifier value"> Qualifier value</label>
-                        <label><input type="checkbox" name="tag" value="record artifact"> Record artifact</label>
-                    </div>
-                    <div class="tag-group">
-                        <h3>Other</h3>
-                        <label><input type="checkbox" name="tag" value="environment"> Environment</label>
-                        <label><input type="checkbox" name="tag" value="geographic location"> Geographic
-                            location</label>
-                        <label><input type="checkbox" name="tag" value="event"> Event</label>
-                        <label><input type="checkbox" name="tag" value="observable entity"> Observable entity</label>
-                        <label><input type="checkbox" name="tag" value="physical force"> Physical force</label>
-                        <label><input type="checkbox" name="tag" value="social concept"> Social concept</label>
-                        <label><input type="checkbox" name="tag" value="staging scale"> Staging scale</label>
-                        <label><input type="checkbox" name="tag" value="assessment scale"> Assessment scale</label>
-                        <label><input type="checkbox" name="tag" value="tumor staging"> Tumor staging</label>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 max-w-6xl">
+        <form id="filterForm" class="space-y-6">
+
+            <!-- File Upload Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <h2 class="text-xl font-semibold text-snomed-dark mb-4 flex items-center">
+                    <span
+                        class="bg-snomed-blue text-white w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">1</span>
+                    Upload SNOMED CT GPS
+                </h2>
+                <div id="dropZone"
+                    class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-snomed-blue hover:bg-blue-50 transition-all cursor-pointer relative">
+                    <input type="file" id="file" name="file" accept=".tsv,.txt" required
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                    <div class="pointer-events-none">
+                        <svg class="mx-auto h-12 w-12 text-snomed-blue mb-3" stroke="currentColor" fill="none"
+                            viewBox="0 0 48 48">
+                            <path
+                                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <p class="text-gray-600 font-medium">Drag & drop the GPS file here or click to browse</p>
+                        <p class="text-sm text-gray-400 mt-1">Supports .tsv and .txt files</p>
+                        <p id="fileName" class="mt-3 text-snomed-dark font-semibold"></p>
                     </div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="customTags">Additional Tags (comma separated)</label>
-                <input type="text" id="customTags" name="customTags" placeholder="e.g. custom tag 1, custom tag 2">
+            <!-- Configuration Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <h2 class="text-xl font-semibold text-snomed-dark mb-4 flex items-center">
+                    <span
+                        class="bg-snomed-blue text-white w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">2</span>
+                    Configuration
+                </h2>
+
+                <!-- Active Only Toggle -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-6 border border-blue-100">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <p class="font-semibold text-snomed-dark">Active Concepts Only</p>
+                            <p class="text-sm text-gray-600 mt-1">Filter out inactive concepts from the result</p>
+                        </div>
+                        <div class="relative">
+                            <input type="checkbox" id="activeOnly" name="activeOnly" class="sr-only peer">
+                            <div
+                                class="w-14 h-8 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-snomed-blue">
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Semantic Tags -->
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Select Semantic Tags</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+                    <!-- Clinical -->
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 class="font-bold text-snomed-blue text-sm uppercase tracking-wide mb-3">Clinical</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="body structure"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Body structure</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="cell"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Cell</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="cell structure"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Cell structure</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="morphologic abnormality"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Morphologic abnormality</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="finding"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Clinical finding</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="disorder"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Disorder</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="organism"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Organism</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="procedure"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Procedure</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="regime/therapy"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Regime/Therapy</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="situation"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Situation</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="specimen"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Specimen</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="substance"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Substance</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pharmaceutical / Product -->
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 class="font-bold text-snomed-blue text-sm uppercase tracking-wide mb-3">Pharmaceutical /
+                            Product</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="product"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Product</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="clinical drug"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Clinical drug</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="medicinal product"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Medicinal product</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="medicinal product form"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Medicinal product form</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="physical object"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Physical object</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Metadata & Qualifiers -->
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 class="font-bold text-snomed-blue text-sm uppercase tracking-wide mb-3">Metadata &
+                            Qualifiers</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="attribute"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Attribute</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="core metadata concept"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Core metadata concept</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="foundation metadata concept"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Foundation metadata concept</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="link assertion"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Link assertion</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="namespace concept"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Namespace concept</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="qualifier value"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Qualifier value</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="record artifact"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Record artifact</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Other -->
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 class="font-bold text-snomed-blue text-sm uppercase tracking-wide mb-3">Other</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="environment"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Environment</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="geographic location"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Geographic location</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="event"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Event</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="observable entity"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Observable entity</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="physical force"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Physical force</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="social concept"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Social concept</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="staging scale"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Staging scale</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="assessment scale"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Assessment scale</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:text-snomed-blue transition">
+                                <input type="checkbox" name="tag" value="tumor staging"
+                                    class="w-4 h-4 text-snomed-blue border-gray-300 rounded focus:ring-snomed-blue">
+                                <span class="text-sm">Tumor staging</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Tags -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Additional Tags</label>
+                    <input type="text" id="customTags" name="customTags"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-snomed-blue focus:border-transparent transition"
+                        placeholder="Type any other tags here, separated by commas...">
+                </div>
             </div>
-            <button type="submit" id="submitBtn">Process & Download</button>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submitBtn"
+                class="w-full bg-gradient-to-r from-snomed-dark to-snomed-blue text-white py-4 px-6 rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                Process & Download
+            </button>
+
+            <!-- Status Message -->
+            <div id="status" class="text-center font-medium min-h-6"></div>
         </form>
-        <div id="status" class="status"></div>
-    </div>
+    </main>
 
-    <style>
-        .tag-groups {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .tag-group h3 {
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-            color: #333;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 0.25rem;
-        }
-
-        .tag-group label {
-            display: block;
-            font-weight: normal;
-            margin-bottom: 0.25rem;
-            font-size: 0.9rem;
-        }
-
-        .tag-group input[type="checkbox"] {
-            margin-right: 0.5rem;
-        }
-    </style>
+    <!-- Footer -->
+    <footer class="text-center py-6 text-gray-500 text-sm space-y-2">
+        <p>&copy; 2025 SNOMED GPS Extractor, SNOMED International.</p>
+        <a href="https://github.com/rorydavidson/snomed-gps-extractor" target="_blank" rel="noopener noreferrer"
+            class="inline-flex items-center space-x-2 text-gray-600 hover:text-snomed-blue transition-colors">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill-rule="evenodd"
+                    d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                    clip-rule="evenodd" />
+            </svg>
+            <span>View on GitHub</span>
+        </a>
+    </footer>
 
     <script>
+        // File Upload Interaction
+        const fileInput = document.getElementById('file');
+        const dropZone = document.getElementById('dropZone');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileNameDisplay.textContent = '✓ ' + e.target.files[0].name;
+                dropZone.classList.add('border-snomed-blue', 'bg-blue-50');
+            }
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-snomed-blue', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            if (!fileInput.files.length) {
+                dropZone.classList.remove('border-snomed-blue', 'bg-blue-50');
+            }
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileNameDisplay.textContent = '✓ ' + e.dataTransfer.files[0].name;
+                dropZone.classList.add('border-snomed-blue', 'bg-blue-50');
+            }
+        });
+
+        // Form Submission
         document.getElementById('filterForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const fileInput = document.getElementById('file');
             const customTagsInput = document.getElementById('customTags');
             const activeOnlyInput = document.getElementById('activeOnly');
             const submitBtn = document.getElementById('submitBtn');
@@ -233,8 +392,9 @@
             formData.append('activeOnly', activeOnlyInput.checked);
 
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Processing...';
+            submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
             statusDiv.textContent = 'Uploading and processing file...';
+            statusDiv.className = 'text-center font-medium min-h-6 text-snomed-blue';
 
             try {
                 const response = await fetch('/api/filter', {
@@ -251,7 +411,6 @@
                 const a = document.createElement('a');
                 a.href = url;
 
-                // Get filename from header or default
                 const contentDisposition = response.headers.get('Content-Disposition');
                 let filename = 'filtered_output.tsv';
                 if (contentDisposition) {
@@ -267,11 +426,12 @@
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
 
-                statusDiv.textContent = 'Download started!';
+                statusDiv.textContent = '✓ Download started successfully!';
+                statusDiv.className = 'text-center font-medium min-h-6 text-green-600';
             } catch (error) {
                 console.error('Error:', error);
-                statusDiv.textContent = 'Error processing file. Please check the console.';
-                alert('An error occurred while processing the file.');
+                statusDiv.textContent = '✗ Error processing file. Please try again.';
+                statusDiv.className = 'text-center font-medium min-h-6 text-red-600';
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Process & Download';

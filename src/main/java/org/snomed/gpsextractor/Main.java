@@ -1,4 +1,4 @@
-package org.snomed.opensetExtractor;
+package org.snomed.gpsextractor;
 
 public class Main {
     public static void main(String[] args) {

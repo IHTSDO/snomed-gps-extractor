@@ -1,4 +1,4 @@
-package org.snomed.opensetExtractor;
+package org.snomed.gpsextractor;
 
 import java.io.*;
 import java.nio.file.*;
@@ -20,9 +20,9 @@ public class ExtractSemanticTags {
             validateSemanticTags(semanticTags);
 
             Path inputPath = Paths.get(inputFile);
-            Path outputPath = inputPath.getParent() == null 
-                ? Paths.get(generateOutputFileName(String.join("_", semanticTags)))
-                : inputPath.getParent().resolve(generateOutputFileName(String.join("_", semanticTags)));
+            Path outputPath = inputPath.getParent() == null
+                    ? Paths.get(generateOutputFileName(String.join("_", semanticTags)))
+                    : inputPath.getParent().resolve(generateOutputFileName(String.join("_", semanticTags)));
             processFile(inputFile, outputPath.toString(), semanticTags);
 
         } catch (IllegalArgumentException e) {
@@ -75,16 +75,16 @@ public class ExtractSemanticTags {
 
     private static void processFile(String inputFile, String outputFile, String[] semanticTags) throws IOException {
         Path outputPath = Paths.get(outputFile);
-        
+
         // Delete the path if it exists (whether file or directory)
         if (Files.exists(outputPath)) {
             if (Files.isDirectory(outputPath)) {
-                Files.delete(outputPath);  // Will only delete if directory is empty
+                Files.delete(outputPath); // Will only delete if directory is empty
             } else {
                 Files.deleteIfExists(outputPath);
             }
         }
-        
+
         // Create parent directories if needed
         if (outputPath.getParent() != null) {
             Files.createDirectories(outputPath.getParent());
@@ -119,18 +119,18 @@ public class ExtractSemanticTags {
         // Extract the semantic tag from within parentheses at the end of the FSN
         int lastOpenParen = column.lastIndexOf('(');
         int lastCloseParen = column.lastIndexOf(')');
-        
+
         if (lastOpenParen == -1 || lastCloseParen == -1 || lastOpenParen > lastCloseParen) {
             return false;
         }
-        
+
         // Extract the tag without parentheses
         String semanticTag = column.substring(lastOpenParen + 1, lastCloseParen);
-        
+
         for (String searchTag : semanticTags) {
             // Remove quotes if present
             searchTag = searchTag.replaceAll("^\"|\"$", "");
-            
+
             // Exact match only
             if (semanticTag.equals(searchTag)) {
                 return true;

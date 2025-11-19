@@ -1,8 +1,7 @@
-package org.snomed.opensetExtractor;
+package org.snomed.gpsextractor;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
-import org.snomed.opensetExtractor.ExtractSemanticTags;
 
 import java.io.*;
 import java.nio.file.*;
@@ -35,7 +34,7 @@ class ExtractSemanticTagsTest {
         String content = Files.readString(outputFile);
         assertTrue(content.contains("Heart disease"));
         assertFalse(content.contains("Lung cancer"));
-        assertTrue(content.contains("(finding)"));  // Verify the semantic tag is present
+        assertTrue(content.contains("(finding)")); // Verify the semantic tag is present
     }
 
     @Test
@@ -50,7 +49,7 @@ class ExtractSemanticTagsTest {
         assertTrue(content.contains("Heart disease"));
         assertTrue(content.contains("Lung cancer"));
         assertFalse(content.contains("Blood test"));
-        assertTrue(content.contains("(finding)"));   // Verify the semantic tags are present
+        assertTrue(content.contains("(finding)")); // Verify the semantic tags are present
         assertTrue(content.contains("(disorder)"));
     }
 

@@ -1,4 +1,4 @@
-package org.snomed.opensetExtractor;
+package org.snomed.gpsextractor;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -16,7 +16,7 @@ public class ExtractTerms {
     private static final String FSN_TYPE_ID = "900000000000003001";
     private static final String SYNONYM_TYPE_ID = "900000000000013009";
     private static final String PREFERRED_ACCEPTABILITY_ID = "900000000000548007";
-    private static final String ACCEPTABILITY_REFSET_ID = "900000000000509007";
+
     private static final String ACTIVE_FLAG = "1";
 
     // File processing constants

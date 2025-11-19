@@ -1,6 +1,6 @@
-# SNOMED CT Openset file creator
+# SNOMED CT GPS file creator
 
-A utility tool for extracting and processing SNOMED CT terminology data from an RF2 release and producing the SNOMED International openset format.
+A utility tool for extracting and processing SNOMED CT terminology data from an RF2 release and producing the SNOMED International GPS format.
 
 ## Overview
 
@@ -31,7 +31,7 @@ Run the JAR file with the extract-terms command. You can either provide the SNOM
 **Option 1: Using Release ZIP file (Recommended)**
 
 ```bash
-java -jar target/opensetextractor*.jar extract-terms <zip-file> <output-file>
+java -jar target/snomed-gps-extractor*.jar extract-terms <zip-file> <output-file>
 ```
 
 Parameters
@@ -40,13 +40,13 @@ Parameters
 
 Example:
 ```bash
-java -jar target/opensetextractor*.jar extract-terms SnomedCT_InternationalRF2_PRODUCTION_20250901T120000Z.zip output.tsv
+java -jar target/snomed-gps-extractor*.jar extract-terms SnomedCT_InternationalRF2_PRODUCTION_20250901T120000Z.zip output.tsv
 ```
 
 **Option 2: Using individual files**
 
 ```bash
-java -jar target/opensetextractor*.jar extract-terms <concepts-file> <descriptions-file> <preferences-file> <output-file>
+java -jar target/snomed-gps-extractor*.jar extract-terms <concepts-file> <descriptions-file> <preferences-file> <output-file>
 ```
 
 Parameters:
@@ -57,7 +57,7 @@ Parameters:
 
 Example:
 ```bash
-java -jar target/opensetextractor*.jar extract-terms demoFiles/concepts.txt demoFiles/descriptions.txt demoFiles/preferences.txt openSCT.tsv
+java -jar target/snomed-gps-extractor*.jar extract-terms demoFiles/concepts.txt demoFiles/descriptions.txt demoFiles/preferences.txt openSCT.tsv
 ```
 
 ### 2. Semantic Tag Filtering
@@ -65,7 +65,7 @@ java -jar target/opensetextractor*.jar extract-terms demoFiles/concepts.txt demo
 Filter terms by semantic tags using:
 
 ```bash
-java -jar target/opensetextractor*.jar extract-tags <input-file> <semantic-tag1> <semantic-tag2> <...>
+java -jar target/snomed-gps-extractor*.jar extract-tags <input-file> <semantic-tag1> <semantic-tag2> <...>
 ```
 
 Parameters:
@@ -74,7 +74,7 @@ Parameters:
 
 Example:
 ```bash
-java -jar target/opensetextractor*.jar extract-tags demoFiles/openSCT.txt disorder "medicinal product"
+java -jar target/snomed-gps-extractor*.jar extract-tags demoFiles/openSCT.txt disorder "medicinal product"
 ```
 
 Common semantic tags :

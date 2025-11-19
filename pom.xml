@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.snomed</groupId>
-    <artifactId>opensetextractor</artifactId>
+    <artifactId>snomed-gps-extractor</artifactId>
     <version>1.0</version>
 
     <properties>
@@ -43,7 +43,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>org.snomed.opensetextractor.Main</mainClass>
+                            <mainClass>org.snomed.gpsextractor.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

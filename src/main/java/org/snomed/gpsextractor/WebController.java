@@ -31,12 +31,13 @@ public class WebController {
         }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        int recordCount;
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
                 BufferedWriter writer = new BufferedWriter(
                         new OutputStreamWriter(outputStream, StandardCharsets.UTF_8))) {
 
-            ExtractSemanticTags.processStream(reader, writer, semanticTags, activeOnly);
+            recordCount = ExtractSemanticTags.processStream(reader, writer, semanticTags, activeOnly);
         }
 
         ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
@@ -46,6 +47,7 @@ public class WebController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .header("X-Record-Count", String.valueOf(recordCount))
                 .contentType(MediaType.parseMediaType("text/tab-separated-values"))
                 .body(resource);
     }

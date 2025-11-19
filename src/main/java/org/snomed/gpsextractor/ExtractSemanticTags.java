@@ -114,7 +114,7 @@ public class ExtractSemanticTags {
         processStream(reader, writer, semanticTags, false);
     }
 
-    public static void processStream(BufferedReader reader, BufferedWriter writer, String[] semanticTags,
+    public static int processStream(BufferedReader reader, BufferedWriter writer, String[] semanticTags,
             boolean activeOnly) throws IOException {
         String headerLine = Objects.requireNonNull(reader.readLine(), "Header line cannot be null");
         writer.write(headerLine);
@@ -143,6 +143,7 @@ public class ExtractSemanticTags {
 
         System.out.println(String.format("Found %d records with semantic tags '%s'",
                 recordsFound, String.join("', '", semanticTags)));
+        return recordsFound;
     }
 
     private static boolean matchesAnyTag(String column, String[] semanticTags) {

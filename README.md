@@ -1,146 +1,103 @@
-# SNOMED CT GPS file creator
+# SNOMED CT GPS Extractor
 
-This utility tool extracts and processes basic SNOMED CT concept and term data from an RF2 release, producing the SNOMED International GPS format.  It also filters the GPS file based on a specified set of semantic tags via the command line or a user-friendly web page.
+A powerful utility tool for extracting and processing SNOMED CT terminology data from an RF2 release. It produces the SNOMED International GPS (Global Patient Set) format and offers advanced filtering capabilities via both a command-line interface (CLI) and a modern web interface.
 
-## Overview
+## Features
 
-This tool provides three main functionalities:
-1. Extracting terms from SNOMED CT source files
-2. Filtering terms by semantic tags (CLI)
-3. Web Interface for easy semantic tag filtering
+*   **Term Extraction**: Extracts concepts and terms from SNOMED CT RF2 release files into a simplified TSV format (ID, Active Status, FSN, Term).
+*   **Semantic Tag Filtering**: Filter the extracted data based on SNOMED CT semantic tags (e.g., "disorder", "finding", "substance").
+*   **Active Concept Filtering**: Optionally filter to include only active concepts.
+*   **Web Interface**: A user-friendly, dark-themed web UI for easy file uploading and semantic tag filtering.
+*   **CLI Support**: Robust command-line tools for automation and batch processing.
 
 ## Prerequisites
 
-- Java Runtime Environment (JRE) 17 or higher
-- SNOMED CT release file zipfile (RF2 format)
+*   **Java Runtime Environment (JRE)**: Version 17 or higher.
+*   **Maven**: For building the project.
+*   **SNOMED CT Release Files**: You will need the standard RF2 release files (Concepts, Descriptions, and Language Preferences) or the full release ZIP.
 
-## Usage
+## Installation
 
-### Building the JAR
-The application can be built using Maven:
+Clone the repository and build the project using Maven:
 
 ```bash
+git clone https://github.com/rorydavidson/snomed-gps-extractor.git
+cd snomed-gps-extractor
 mvn clean package
 ```
 
-This will create a JAR file in the `target` directory.
+This will create an executable JAR file in the `target` directory (e.g., `snomed-gps-extractor-1.0.jar`).
 
-### 1. Term Extraction
+## Usage
 
-Run the JAR file with the extract-terms command. You can either provide the SNOMED CT release ZIP file directly or individual files.
+### 1. Web Interface (Recommended)
 
-**Option 1: Using Release ZIP file (Recommended)**
+The easiest way to filter your GPS data is using the built-in web server.
+
+1.  Start the server:
+    ```bash
+    java -jar target/snomed-gps-extractor-1.0.jar server
+    ```
+    *Or simply:*
+    ```bash
+    java -jar target/snomed-gps-extractor-1.0.jar
+    ```
+
+2.  Open your browser and navigate to `http://localhost:8080`.
+
+3.  **Upload**: Drag and drop your SNOMED CT GPS file (TSV format).
+4.  **Configure**:
+    *   Toggle **"Active Concepts Only"** to exclude inactive records.
+    *   Select the desired **Semantic Tags** from the categorized list.
+    *   Add any **Custom Tags** if needed.
+5.  **Process**: Click "Process & Download" to get your filtered dataset.
+
+### 2. Term Extraction (CLI)
+
+Extract raw terms from SNOMED CT RF2 files to create a GPS-compatible TSV file.
+
+**Option 1: Using Release ZIP file**
+```bash
+java -jar target/snomed-gps-extractor-1.0.jar extract-terms [--active-only] <zip-file> <output-file>
+```
+
+**Option 2: Using Individual RF2 Files**
+```bash
+java -jar target/snomed-gps-extractor-1.0.jar extract-terms [--active-only] <concepts-file> <descriptions-file> <language-preferences-file> <output-file>
+```
+
+*   `--active-only`: (Optional) If set, only active concepts are extracted. Default is all concepts.
+
+### 3. Semantic Tag Filtering (CLI)
+
+Filter an existing GPS TSV file by semantic tags using the command line.
 
 ```bash
-java -jar target/snomed-gps-extractor*.jar extract-terms [--active-only] <zip-file> <output-file>
+java -jar target/snomed-gps-extractor-1.0.jar extract-tags [--active-only] <input-file> <tag1> [tag2 ...]
 ```
 
-Parameters
-- `--active-only`: (Optional) If specified, only active concepts will be extracted. By default, all concepts (active and inactive) are processed.
-- `zip-file`: Path and filename of the SNOMED CT release zipfile
-- `output-file`: Desired name for the output TSV file
+*   `--active-only`: (Optional) Filter for active concepts only.
+*   `input-file`: The GPS file to filter.
+*   `tag`: One or more semantic tags (e.g., "disorder", "body structure").
 
-Example:
+**Example:**
 ```bash
-java -jar target/snomed-gps-extractor*.jar extract-terms SnomedCT_InternationalRF2_PRODUCTION_20250901T120000Z.zip output.tsv
+java -jar target/snomed-gps-extractor-1.0.jar extract-tags --active-only output.tsv "disorder" "finding"
 ```
 
-**Option 2: Using individual files**
+## File Formats
 
-```bash
-java -jar target/snomed-gps-extractor*.jar extract-terms [--active-only] <concepts-file> <descriptions-file> <preferences-file> <output-file>
-```
+### Output Format (GPS)
+The tool produces a Tab-Separated Values (TSV) file with the following columns:
 
-Parameters:
-- `concepts-file`: Path and filename of the SNOMED CT concepts file
-- `descriptions-file`: Path and filename of the descriptions file
-- `preferences-file`: Path and filename of the language preferences file (Used to identify the Preferred Term)
-- `output-file`: Desired name for the output TSV file
-
-Example:
-```bash
-java -jar target/snomed-gps-extractor*.jar extract-terms demoFiles/concepts.txt demoFiles/descriptions.txt demoFiles/preferences.txt openSCT.tsv
-```
-
-### 2. Semantic Tag Filtering
-
-Filter terms by semantic tags using:
-
-```bash
-java -jar target/snomed-gps-extractor*.jar extract-tags [--active-only] <input-file> <semantic-tag1> <semantic-tag2> <...>
-```
-
-Parameters:
-- `--active-only`: (Optional) If specified, only active concepts will be extracted.
-- `input-file`: Path and filename of the processed SNOMED CT file (generally the output from ExtractTerms or the downloaded OpenSet file)
-- `semantic-tag`: The semantic tags to filter by, using the full tag name in quotes, e.g. "disorder" or "body structure"
-
-Example:
-```bash
-java -jar target/snomed-gps-extractor*.jar extract-tags demoFiles/openSCT.txt "disorder" "body structure"
-```
-
-### 3. Web Interface
-
-A user-friendly web interface is available for filtering semantic tags.
-
-Start the server:
-
-```bash
-java -jar target/snomed-gps-extractor*.jar server
-```
-
-Or simply run without arguments:
-
-```bash
-java -jar target/snomed-gps-extractor*.jar
-```
-
-Then open your browser and navigate to `http://localhost:8080`.
-
-The web interface allows you to:
-1. Upload a TSV file (output from Term Extraction).
-2. Enter a list of semantic tags (comma-separated).
-3. Process and download the filtered file.
-
-Common semantic tags :
-- finding
-- disorder
-- procedure
-- organism
-- substance
-- body structure
-- observable entity
-
-More information on semantic tags can be found here - https://docs.snomed.org/snomed-ct-specifications/snomed-ct-editorial-guide/readme/authoring/general-naming-conventions/descriptions/fully-specified-name/index 
-
-
-## File Format
-
-### Output Format
-The generated output file is tab-separated (TSV) and contains the following columns:
-- id (SNOMED CT Concept Identifier)
-- active (Active flag)
-- fsn (Fully Specified Name)
-- term (Preferred Term in International English)
-
-Example output:
-```
-id active fsn term
-73211009	1	Diabetes mellitus (disorder)	Diabetes mellitus
-44054006	1 Diabetes mellitus type 2 (disorder) Type 2 diabetes mellitus
-```
-
-## Notes
-- Ensure all input files are in the correct RF2 format
-- File paths can be relative or absolute
-- The semantic tag filter is case-sensitive and each semantic should be in quotes, e.g. "disorder" or "medicinal product"
-
-## Error Handling
-The program will display appropriate error messages if:
-- Input files are not found
-- Files are in incorrect format
-- Invalid semantic tags are specified
+| id | active | fsn | term |
+|----|--------|-----|------|
+| 73211009 | 1 | Diabetes mellitus (disorder) | Diabetes mellitus |
+| 101009 | 0 | Inactive concept (disorder) | Inactive concept |
 
 ## License
-Apache, version 2.0 - see LICENSE file
+
+Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
+
+---
+&copy; 2025 SNOMED International.

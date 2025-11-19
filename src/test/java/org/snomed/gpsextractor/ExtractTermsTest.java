@@ -140,6 +140,57 @@ class ExtractTermsTest {
         }
 
         @Test
+        void testActiveOnlyFiltering() throws IOException {
+                // Concept 100: Active
+                // Concept 200: Inactive
+                String conceptsContent = "id\teffectiveTime\tactive\tmoduleId\tdefinitionStatusId\n" +
+                                "100\t20240101\t1\t900000000000207008\t900000000000074008\n" +
+                                "200\t20240101\t0\t900000000000207008\t900000000000074008\n";
+                Files.write(conceptsFile, conceptsContent.getBytes());
+
+                String descriptionsContent = "id\teffectiveTime\tactive\tmoduleId\tconceptId\tlanguageCode\ttypeId\tterm\n"
+                                +
+                                "101\t20240101\t1\t900000000000207008\t100\ten\t900000000000003001\tActive Concept (FSN)\n"
+                                +
+                                "102\t20240101\t1\t900000000000207008\t100\ten\t900000000000013009\tActive Concept\n" +
+                                "201\t20240101\t1\t900000000000207008\t200\ten\t900000000000003001\tInactive Concept (FSN)\n"
+                                +
+                                "202\t20240101\t1\t900000000000207008\t200\ten\t900000000000013009\tInactive Concept\n";
+                Files.write(descriptionsFile, descriptionsContent.getBytes());
+
+                String preferencesContent = "id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId\tacceptabilityId\n"
+                                +
+                                "301\t20240101\t1\t900000000000207008\t900000000000509007\t102\t900000000000548007\n" +
+                                "302\t20240101\t1\t900000000000207008\t900000000000509007\t202\t900000000000548007\n";
+                Files.write(preferencesFile, preferencesContent.getBytes());
+
+                // Test 1: Default behavior (include inactive)
+                String[] argsDefault = {
+                                conceptsFile.toString(),
+                                descriptionsFile.toString(),
+                                preferencesFile.toString(),
+                                outputFile.toString()
+                };
+                ExtractTerms.main(argsDefault);
+                String contentDefault = Files.readString(outputFile);
+                assertTrue(contentDefault.contains("100\t1\tActive Concept (FSN)\tActive Concept"));
+                assertTrue(contentDefault.contains("200\t0\tInactive Concept (FSN)\tInactive Concept"));
+
+                // Test 2: Active only
+                String[] argsActiveOnly = {
+                                "--active-only",
+                                conceptsFile.toString(),
+                                descriptionsFile.toString(),
+                                preferencesFile.toString(),
+                                outputFile.toString()
+                };
+                ExtractTerms.main(argsActiveOnly);
+                String contentActiveOnly = Files.readString(outputFile);
+                assertTrue(contentActiveOnly.contains("100\t1\tActive Concept (FSN)\tActive Concept"));
+                assertFalse(contentActiveOnly.contains("200\t0\tInactive Concept (FSN)\tInactive Concept"));
+        }
+
+        @Test
         void testZipProcessing() throws IOException {
                 // Create a mock ZIP file
                 Path zipPath = tempDir.resolve("test.zip");

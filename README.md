@@ -31,10 +31,11 @@ Run the JAR file with the extract-terms command. You can either provide the SNOM
 **Option 1: Using Release ZIP file (Recommended)**
 
 ```bash
-java -jar target/snomed-gps-extractor*.jar extract-terms <zip-file> <output-file>
+java -jar target/snomed-gps-extractor*.jar extract-terms [--active-only] <zip-file> <output-file>
 ```
 
 Parameters
+- `--active-only`: (Optional) If specified, only active concepts will be extracted. By default, all concepts (active and inactive) are processed.
 - `zip-file`: Path and filename of the SNOMED CT release zipfile
 - `output-file`: Desired name for the output TSV file
 
@@ -46,7 +47,7 @@ java -jar target/snomed-gps-extractor*.jar extract-terms SnomedCT_InternationalR
 **Option 2: Using individual files**
 
 ```bash
-java -jar target/snomed-gps-extractor*.jar extract-terms <concepts-file> <descriptions-file> <preferences-file> <output-file>
+java -jar target/snomed-gps-extractor*.jar extract-terms [--active-only] <concepts-file> <descriptions-file> <preferences-file> <output-file>
 ```
 
 Parameters:

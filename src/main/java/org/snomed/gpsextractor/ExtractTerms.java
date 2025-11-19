@@ -32,17 +32,27 @@ public class ExtractTerms {
 
     public static void main(String[] args) {
         try {
-            if (args.length == 2 && args[0].toLowerCase().endsWith(".zip")) {
-                processZip(args[0], args[1]);
-            } else if (validateArgs(args)) {
-                processFiles(args[0], args[1], args[2], args[3]);
+            boolean activeOnly = false;
+            String[] fileArgs = args;
+
+            // Check for active-only flag
+            if (args.length > 0 && args[0].equals("--active-only")) {
+                activeOnly = true;
+                fileArgs = new String[args.length - 1];
+                System.arraycopy(args, 1, fileArgs, 0, args.length - 1);
+            }
+
+            if (fileArgs.length == 2 && fileArgs[0].toLowerCase().endsWith(".zip")) {
+                processZip(fileArgs[0], fileArgs[1], activeOnly);
+            } else if (validateArgs(fileArgs)) {
+                processFiles(fileArgs[0], fileArgs[1], fileArgs[2], fileArgs[3], activeOnly);
             }
         } catch (IOException e) {
             System.err.println("Error processing files: " + e.getMessage());
         }
     }
 
-    private static void processZip(String zipFile, String outputFile) throws IOException {
+    private static void processZip(String zipFile, String outputFile, boolean activeOnly) throws IOException {
         Path tempDir = Files.createTempDirectory("snomed-extract");
         try {
             String conceptsFile = null;
@@ -65,12 +75,11 @@ public class ExtractTerms {
                 }
             }
 
-            if (conceptsFile == null || descriptionsFile == null || preferencesFile == null) {
-                throw new IOException("Missing required files in ZIP archive");
+            if (conceptsFile != null && descriptionsFile != null && preferencesFile != null) {
+                processFiles(conceptsFile, descriptionsFile, preferencesFile, outputFile, activeOnly);
+            } else {
+                System.err.println("Could not find all required files in ZIP.");
             }
-
-            processFiles(conceptsFile, descriptionsFile, preferencesFile, outputFile);
-
         } finally {
             // Cleanup temp directory
             try (java.util.stream.Stream<Path> walk = Files.walk(tempDir)) {
@@ -91,37 +100,40 @@ public class ExtractTerms {
     }
 
     private static void processFiles(String conceptsFile, String descriptionsFile,
-            String preferencesFile, String outputFile) throws IOException {
-        Map<String, String> activeConcepts = readActiveConcepts(conceptsFile);
+            String preferencesFile, String outputFile, boolean activeOnly) throws IOException {
+        Map<String, String> concepts = readConcepts(conceptsFile, activeOnly);
         Map<String, String> descriptionPreferences = readPreferences(preferencesFile);
         Map<String, String> fsnDescriptions = new HashMap<>();
         Map<String, String> preferredTerms = new HashMap<>();
 
-        readDescriptions(descriptionsFile, descriptionPreferences, fsnDescriptions, preferredTerms);
+        readDescriptions(descriptionsFile, descriptionPreferences, fsnDescriptions, preferredTerms, concepts);
 
-        writeOutput(outputFile, activeConcepts, fsnDescriptions, preferredTerms);
+        writeOutput(outputFile, concepts, fsnDescriptions, preferredTerms);
     }
 
     private static boolean validateArgs(String[] args) {
         if (args.length < 4) {
             System.err.println("Usage:");
-            System.err.println("  1. java ExtractTerms <zip-file> <output-file>");
-            System.err.println("  2. java ExtractTerms <concepts-rf2-file> <descriptions-rf2-file> " +
+            System.err.println("  1. java ExtractTerms [--active-only] <zip-file> <output-file>");
+            System.err.println("  2. java ExtractTerms [--active-only] <concepts-rf2-file> <descriptions-rf2-file> " +
                     "<languagePreferences-rf2-file> <output-file>");
             return false;
         }
         return true;
     }
 
-    private static Map<String, String> readActiveConcepts(String filename) throws IOException {
+    private static Map<String, String> readConcepts(String filename, boolean activeOnly) throws IOException {
         Map<String, String> concepts = new HashMap<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             String line;
             reader.readLine(); // Skip header
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(TAB_DELIMITER);
-                if (parts.length > ACTIVE_INDEX && ACTIVE_FLAG.equals(parts[ACTIVE_INDEX])) {
-                    concepts.put(parts[CONCEPT_ID_INDEX], ACTIVE_FLAG); // Store just the active flag
+                if (parts.length > ACTIVE_INDEX) {
+                    boolean isActive = ACTIVE_FLAG.equals(parts[ACTIVE_INDEX]);
+                    if (!activeOnly || isActive) {
+                        concepts.put(parts[CONCEPT_ID_INDEX], parts[ACTIVE_INDEX]); // Store active status
+                    }
                 }
             }
         }
@@ -146,12 +158,13 @@ public class ExtractTerms {
     private static void readDescriptions(String filename,
             Map<String, String> descriptionPreferences,
             Map<String, String> fsnDescriptions,
-            Map<String, String> preferredTerms) throws IOException {
+            Map<String, String> preferredTerms,
+            Map<String, String> activeConcepts) throws IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             String line;
             reader.readLine(); // Skip header
             while ((line = reader.readLine()) != null) {
-                processDescriptionLine(line, descriptionPreferences, fsnDescriptions, preferredTerms);
+                processDescriptionLine(line, descriptionPreferences, fsnDescriptions, preferredTerms, activeConcepts);
             }
         }
     }
@@ -159,7 +172,8 @@ public class ExtractTerms {
     private static void processDescriptionLine(String line,
             Map<String, String> descriptionPreferences,
             Map<String, String> fsnDescriptions,
-            Map<String, String> preferredTerms) {
+            Map<String, String> preferredTerms,
+            Map<String, String> activeConcepts) {
         String[] parts = line.split(TAB_DELIMITER);
         if (!isValidDescriptionLine(parts)) {
             return;
@@ -167,6 +181,13 @@ public class ExtractTerms {
 
         String descriptionId = parts[0];
         String conceptId = parts[4]; // Concept ID
+
+        // Only process descriptions for concepts we are interested in (active or all,
+        // depending on filter)
+        if (!activeConcepts.containsKey(conceptId)) {
+            return;
+        }
+
         String typeId = parts[TYPE_ID_INDEX];
         String term = parts[TERM_INDEX];
 
@@ -187,17 +208,18 @@ public class ExtractTerms {
     }
 
     private static void writeOutput(String filename,
-            Map<String, String> activeConcepts,
+            Map<String, String> concepts,
             Map<String, String> fsnDescriptions,
             Map<String, String> preferredTerms) throws IOException {
         int recordCount = 0;
         try (FileWriter writer = new FileWriter(filename)) {
             writeHeader(writer);
-            for (String conceptId : activeConcepts.keySet()) {
+            for (String conceptId : concepts.keySet()) {
+                String active = concepts.get(conceptId);
                 String fsn = fsnDescriptions.get(conceptId);
                 String term = preferredTerms.get(conceptId);
 
-                writeTerm(writer, conceptId, fsn, term);
+                writeTerm(writer, conceptId, active, fsn, term);
                 recordCount++;
             }
         }
@@ -210,11 +232,12 @@ public class ExtractTerms {
 
     private static void writeTerm(FileWriter writer,
             String conceptId,
+            String active,
             String fsn,
             String term) throws IOException {
         writer.write(String.format("%s\t%s\t%s\t%s\n",
                 conceptId,
-                "1", // active (we only store active concepts)
+                active,
                 fsn != null ? fsn : "",
                 term != null ? term : ""));
     }

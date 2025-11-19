@@ -4,10 +4,10 @@ A powerful utility tool for extracting and processing SNOMED CT terminology data
 
 ## Features
 
-*   **Term Extraction**: Extracts concepts and terms from SNOMED CT RF2 release files into a simplified TSV format (ID, Active Status, FSN, Term).
-*   **Semantic Tag Filtering**: Filter the extracted data based on SNOMED CT semantic tags (e.g., "disorder", "finding", "substance").
+*   [**Term Extraction**](#GPS-file-creation): Extracts concepts and terms from SNOMED CT RF2 release files into a simplified TSV format (ID, Active Status, FSN, Term).
+*   [**Semantic Tag Filtering**](#semantic-tag-filtering): Filter the extracted data based on SNOMED CT semantic tags (e.g., "disorder", "finding", "substance").
+*   [**Web Interface**](#web-interface-recommended): A user-friendly, dark-themed web UI for easy file uploading and semantic tag filtering.
 *   **Active Concept Filtering**: Optionally filter to include only active concepts.
-*   **Web Interface**: A user-friendly, dark-themed web UI for easy file uploading and semantic tag filtering.
 *   **CLI Support**: Robust command-line tools for automation and batch processing.
 
 ## Prerequisites
@@ -28,9 +28,21 @@ mvn clean package
 
 This will create an executable JAR file in the `target` directory (e.g., `snomed-gps-extractor-1.0.jar`).
 
-## Usage
 
-### 1. Web Interface (Recommended)
+## SNOMED CT GPS file creation
+
+Extract raw terms from SNOMED CT RF2 files to create a GPS-compatible TSV file.
+
+### Using SNOMED CT RF2 Release ZIP file
+```bash
+java -jar target/snomed-gps-extractor-1.0.jar extract-terms [--active-only] <rf2-zip-file> <output-file>
+```
+
+*   `--active-only`: (Optional) If set, only active concepts are extracted. Default is all concepts.
+
+## Semantic Tag Filtering
+
+### Web Interface (Recommended)
 
 ![](web-ui.jpeg)
 
@@ -54,23 +66,7 @@ The easiest way to filter your GPS data is using the built-in web server.
     *   Add any **Custom Tags** if needed.
 5.  **Process**: Click "Process & Download" to get your filtered dataset.
 
-### 2. Term Extraction (CLI)
-
-Extract raw terms from SNOMED CT RF2 files to create a GPS-compatible TSV file.
-
-**Option 1: Using Release ZIP file**
-```bash
-java -jar target/snomed-gps-extractor-1.0.jar extract-terms [--active-only] <zip-file> <output-file>
-```
-
-**Option 2: Using Individual RF2 Files**
-```bash
-java -jar target/snomed-gps-extractor-1.0.jar extract-terms [--active-only] <concepts-file> <descriptions-file> <language-preferences-file> <output-file>
-```
-
-*   `--active-only`: (Optional) If set, only active concepts are extracted. Default is all concepts.
-
-### 3. Semantic Tag Filtering (CLI)
+#### Command line
 
 Filter an existing GPS TSV file by semantic tags using the command line.
 
@@ -81,11 +77,6 @@ java -jar target/snomed-gps-extractor-1.0.jar extract-tags [--active-only] <inpu
 *   `--active-only`: (Optional) Filter for active concepts only.
 *   `input-file`: The GPS file to filter.
 *   `tag`: One or more semantic tags (e.g., "disorder", "body structure").
-
-**Example:**
-```bash
-java -jar target/snomed-gps-extractor-1.0.jar extract-tags --active-only output.tsv "disorder" "finding"
-```
 
 ## File Formats
 

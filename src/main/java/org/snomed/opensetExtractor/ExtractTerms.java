@@ -4,6 +4,10 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,32 +26,87 @@ public class ExtractTerms {
     private static final int TYPE_ID_INDEX = 6;
     private static final int TERM_INDEX = 7;
 
+    // Preferences file constants
+    private static final int PREF_REFERENCED_COMPONENT_ID_INDEX = 5;
+    private static final int PREF_ACCEPTABILITY_ID_INDEX = 6;
+
     public static void main(String[] args) {
         try {
-            if (!validateArgs(args)) {
-                return;
+            if (args.length == 2 && args[0].toLowerCase().endsWith(".zip")) {
+                processZip(args[0], args[1]);
+            } else if (validateArgs(args)) {
+                processFiles(args[0], args[1], args[2], args[3]);
             }
-
-            processFiles(args[0], args[1], args[2], args[3]);
         } catch (IOException e) {
             System.err.println("Error processing files: " + e.getMessage());
         }
     }
 
+    private static void processZip(String zipFile, String outputFile) throws IOException {
+        Path tempDir = Files.createTempDirectory("snomed-extract");
+        try {
+            String conceptsFile = null;
+            String descriptionsFile = null;
+            String preferencesFile = null;
+
+            try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(zipFile)) {
+                java.util.Enumeration<? extends java.util.zip.ZipEntry> entries = zip.entries();
+                while (entries.hasMoreElements()) {
+                    java.util.zip.ZipEntry entry = entries.nextElement();
+                    String name = entry.getName();
+
+                    if (name.contains("Snapshot/Terminology/sct2_Concept_Snapshot_INT")) {
+                        conceptsFile = extractFile(zip, entry, tempDir);
+                    } else if (name.contains("Snapshot/Terminology/sct2_Description_Snapshot-en_INT")) {
+                        descriptionsFile = extractFile(zip, entry, tempDir);
+                    } else if (name.contains("Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_INT")) {
+                        preferencesFile = extractFile(zip, entry, tempDir);
+                    }
+                }
+            }
+
+            if (conceptsFile == null || descriptionsFile == null || preferencesFile == null) {
+                throw new IOException("Missing required files in ZIP archive");
+            }
+
+            processFiles(conceptsFile, descriptionsFile, preferencesFile, outputFile);
+
+        } finally {
+            // Cleanup temp directory
+            try (java.util.stream.Stream<Path> walk = Files.walk(tempDir)) {
+                walk.sorted(java.util.Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(java.io.File::delete);
+            }
+        }
+    }
+
+    private static String extractFile(java.util.zip.ZipFile zip, java.util.zip.ZipEntry entry, Path destDir)
+            throws IOException {
+        Path destFile = destDir.resolve(Paths.get(entry.getName()).getFileName());
+        try (java.io.InputStream is = zip.getInputStream(entry)) {
+            Files.copy(is, destFile, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return destFile.toString();
+    }
+
     private static void processFiles(String conceptsFile, String descriptionsFile,
             String preferencesFile, String outputFile) throws IOException {
         Map<String, String> activeConcepts = readActiveConcepts(conceptsFile);
+        Map<String, String> descriptionPreferences = readPreferences(preferencesFile);
         Map<String, String> fsnDescriptions = new HashMap<>();
         Map<String, String> preferredTerms = new HashMap<>();
-        
-        readDescriptions(descriptionsFile, fsnDescriptions, preferredTerms);
-        
+
+        readDescriptions(descriptionsFile, descriptionPreferences, fsnDescriptions, preferredTerms);
+
         writeOutput(outputFile, activeConcepts, fsnDescriptions, preferredTerms);
     }
 
     private static boolean validateArgs(String[] args) {
         if (args.length < 4) {
-            System.err.println("Usage: java ExtractTerms <concepts-rf2-file> <descriptions-rf2-file> " +
+            System.err.println("Usage:");
+            System.err.println("  1. java ExtractTerms <zip-file> <output-file>");
+            System.err.println("  2. java ExtractTerms <concepts-rf2-file> <descriptions-rf2-file> " +
                     "<languagePreferences-rf2-file> <output-file>");
             return false;
         }
@@ -62,26 +121,43 @@ public class ExtractTerms {
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(TAB_DELIMITER);
                 if (parts.length > ACTIVE_INDEX && ACTIVE_FLAG.equals(parts[ACTIVE_INDEX])) {
-                    concepts.put(parts[CONCEPT_ID_INDEX], ACTIVE_FLAG);  // Store just the active flag
+                    concepts.put(parts[CONCEPT_ID_INDEX], ACTIVE_FLAG); // Store just the active flag
                 }
             }
         }
         return concepts;
     }
 
+    private static Map<String, String> readPreferences(String filename) throws IOException {
+        Map<String, String> preferences = new HashMap<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            reader.readLine(); // Skip header
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(TAB_DELIMITER);
+                if (parts.length > PREF_ACCEPTABILITY_ID_INDEX && ACTIVE_FLAG.equals(parts[ACTIVE_INDEX])) {
+                    preferences.put(parts[PREF_REFERENCED_COMPONENT_ID_INDEX], parts[PREF_ACCEPTABILITY_ID_INDEX]);
+                }
+            }
+        }
+        return preferences;
+    }
+
     private static void readDescriptions(String filename,
+            Map<String, String> descriptionPreferences,
             Map<String, String> fsnDescriptions,
             Map<String, String> preferredTerms) throws IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             String line;
             reader.readLine(); // Skip header
             while ((line = reader.readLine()) != null) {
-                processDescriptionLine(line, fsnDescriptions, preferredTerms);
+                processDescriptionLine(line, descriptionPreferences, fsnDescriptions, preferredTerms);
             }
         }
     }
 
     private static void processDescriptionLine(String line,
+            Map<String, String> descriptionPreferences,
             Map<String, String> fsnDescriptions,
             Map<String, String> preferredTerms) {
         String[] parts = line.split(TAB_DELIMITER);
@@ -89,14 +165,19 @@ public class ExtractTerms {
             return;
         }
 
-        String conceptId = parts[4];  // Concept ID
+        String descriptionId = parts[0];
+        String conceptId = parts[4]; // Concept ID
         String typeId = parts[TYPE_ID_INDEX];
         String term = parts[TERM_INDEX];
 
         if (FSN_TYPE_ID.equals(typeId)) {
             fsnDescriptions.put(conceptId, term);
         } else if (SYNONYM_TYPE_ID.equals(typeId)) {
-            preferredTerms.put(conceptId, term);
+            // Check if this description is preferred in the language refset
+            String acceptability = descriptionPreferences.get(descriptionId);
+            if (PREFERRED_ACCEPTABILITY_ID.equals(acceptability)) {
+                preferredTerms.put(conceptId, term);
+            }
         }
     }
 
@@ -115,7 +196,7 @@ public class ExtractTerms {
             for (String conceptId : activeConcepts.keySet()) {
                 String fsn = fsnDescriptions.get(conceptId);
                 String term = preferredTerms.get(conceptId);
-                
+
                 writeTerm(writer, conceptId, fsn, term);
                 recordCount++;
             }
@@ -133,7 +214,7 @@ public class ExtractTerms {
             String term) throws IOException {
         writer.write(String.format("%s\t%s\t%s\t%s\n",
                 conceptId,
-                "1",  // active (we only store active concepts)
+                "1", // active (we only store active concepts)
                 fsn != null ? fsn : "",
                 term != null ? term : ""));
     }

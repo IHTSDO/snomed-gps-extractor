@@ -5,6 +5,7 @@ public class Main {
         if (args.length < 1) {
             System.err.println("Usage: java -jar <jarfile> <command> [args...]");
             System.err.println("Commands:");
+            System.err.println("  extract-terms <zip-file> <output-file>");
             System.err.println("  extract-terms <concepts-file> <descriptions-file> <preferences-file> <output-file>");
             System.err.println("  extract-tags <input-file> <semantic-tag1> [semantic-tag2 ...]");
             return;

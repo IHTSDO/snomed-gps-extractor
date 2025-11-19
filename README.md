@@ -11,10 +11,7 @@ This tool provides two main functionalities:
 ## Prerequisites
 
 - Java Runtime Environment (JRE) 17 or higher
-- SNOMED CT release files (RF2 format)
-  - Concept file
-  - Description file
-  - Language reference set file (preferences)
+- SNOMED CT release file zipfile (RF2 format)
 
 ## Usage
 
@@ -29,7 +26,24 @@ This will create a JAR file in the `target` directory.
 
 ### 1. Term Extraction
 
-Run the JAR file with the extract-terms command:
+Run the JAR file with the extract-terms command. You can either provide the SNOMED CT release ZIP file directly or individual files.
+
+**Option 1: Using Release ZIP file (Recommended)**
+
+```bash
+java -jar target/opensetextractor*.jar extract-terms <zip-file> <output-file>
+```
+
+Parameters
+- `zip-file`: Path and filename of the SNOMED CT release zipfile
+- `output-file`: Desired name for the output TSV file
+
+Example:
+```bash
+java -jar target/opensetextractor*.jar extract-terms SnomedCT_InternationalRF2_PRODUCTION_20250901T120000Z.zip output.tsv
+```
+
+**Option 2: Using individual files**
 
 ```bash
 java -jar target/opensetextractor*.jar extract-terms <concepts-file> <descriptions-file> <preferences-file> <output-file>
@@ -38,7 +52,7 @@ java -jar target/opensetextractor*.jar extract-terms <concepts-file> <descriptio
 Parameters:
 - `concepts-file`: Path and filename of the SNOMED CT concepts file
 - `descriptions-file`: Path and filename of the descriptions file
-- `preferences-file`: Path and filename of the language preferences file
+- `preferences-file`: Path and filename of the language preferences file (Used to identify the Preferred Term)
 - `output-file`: Desired name for the output TSV file
 
 Example:
@@ -72,23 +86,17 @@ Common semantic tags :
 - body structure
 - observable entity
 
-More information on semantic tags can be found here - https://confluence.ihtsdotools.org/display/DOCEG/Semantic+Tag
+More information on semantic tags can be found here - https://docs.snomed.org/snomed-ct-specifications/snomed-ct-editorial-guide/readme/authoring/general-naming-conventions/descriptions/fully-specified-name/index 
 
 
 ## File Format
 
-### Input Files
-The tool expects SNOMED CT RF2 release files in their standard format:
-- Concepts file: Contains concept IDs and metadata
-- Descriptions file: Contains terms and descriptions
-- Language preferences file: Contains preferred terms for specific languages
-
 ### Output Format
 The generated output file is tab-separated (TSV) and contains the following columns:
-1. id (SNOMED CT Concept Identifier)
-2. active (Active flag)
-3. fsn (Fully Specified Name)
-4. term (Preferred Term in International English)
+- id (SNOMED CT Concept Identifier)
+- active (Active flag)
+- fsn (Fully Specified Name)
+- term (Preferred Term in International English)
 
 Example output:
 ```
@@ -103,10 +111,10 @@ id active fsn term
 - The semantic tag filter is case-sensitive and each semantic should be in quotes, e.g. "disorder" or "medicinal product"
 
 ## Error Handling
-- The program will display appropriate error messages if:
-  - Input files are not found
-  - Files are in incorrect format
-  - Invalid semantic tags are specified
+The program will display appropriate error messages if:
+- Input files are not found
+- Files are in incorrect format
+- Invalid semantic tags are specified
 
 ## License
 Apache, version 2.0 - see LICENSE file

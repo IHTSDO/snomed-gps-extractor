@@ -4,9 +4,10 @@ A utility tool for extracting and processing SNOMED CT terminology data from an 
 
 ## Overview
 
-This tool provides two main functionalities:
+This tool provides three main functionalities:
 1. Extracting terms from SNOMED CT source files
-2. Filtering terms by semantic tags
+2. Filtering terms by semantic tags (CLI)
+3. Web Interface for easy semantic tag filtering
 
 ## Prerequisites
 
@@ -66,10 +67,11 @@ java -jar target/snomed-gps-extractor*.jar extract-terms demoFiles/concepts.txt 
 Filter terms by semantic tags using:
 
 ```bash
-java -jar target/snomed-gps-extractor*.jar extract-tags <input-file> <semantic-tag1> <semantic-tag2> <...>
+java -jar target/snomed-gps-extractor*.jar extract-tags [--active-only] <input-file> <semantic-tag1> <semantic-tag2> <...>
 ```
 
 Parameters:
+- `--active-only`: (Optional) If specified, only active concepts will be extracted.
 - `input-file`: Path and filename of the processed SNOMED CT file (generally the output from ExtractTerms or the downloaded OpenSet file)
 - `semantic-tag`: The semantic tags to filter by, using the full tag name in quotes, e.g. "disorder" or "body structure"
 
@@ -77,6 +79,29 @@ Example:
 ```bash
 java -jar target/snomed-gps-extractor*.jar extract-tags demoFiles/openSCT.txt "disorder" "body structure"
 ```
+
+### 3. Web Interface
+
+A user-friendly web interface is available for filtering semantic tags.
+
+Start the server:
+
+```bash
+java -jar target/snomed-gps-extractor*.jar server
+```
+
+Or simply run without arguments:
+
+```bash
+java -jar target/snomed-gps-extractor*.jar
+```
+
+Then open your browser and navigate to `http://localhost:8080`.
+
+The web interface allows you to:
+1. Upload a TSV file (output from Term Extraction).
+2. Enter a list of semantic tags (comma-separated).
+3. Process and download the filtered file.
 
 Common semantic tags :
 - finding

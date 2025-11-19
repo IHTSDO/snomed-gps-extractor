@@ -11,10 +11,27 @@ public class ExtractSemanticTags {
 
     public static void main(String[] args) {
         try {
-            validateArgs(args);
-            String inputFile = args[0];
-            String[] semanticTags = new String[args.length - 1];
-            System.arraycopy(args, 1, semanticTags, 0, args.length - 1);
+            if (args.length < 2) {
+                throw new IllegalArgumentException("Insufficient arguments provided.");
+            }
+
+            boolean activeOnly = false;
+            int argIndex = 0;
+
+            if (args[0].equals("--active-only")) {
+                activeOnly = true;
+                argIndex++;
+            }
+
+            if (args.length <= argIndex + 1) {
+                throw new IllegalArgumentException("Insufficient arguments provided after flags.");
+            }
+
+            String inputFile = args[argIndex];
+            argIndex++;
+
+            String[] semanticTags = new String[args.length - argIndex];
+            System.arraycopy(args, argIndex, semanticTags, 0, args.length - argIndex);
 
             validateInputFile(inputFile);
             validateSemanticTags(semanticTags);
@@ -23,7 +40,7 @@ public class ExtractSemanticTags {
             Path outputPath = inputPath.getParent() == null
                     ? Paths.get(generateOutputFileName(String.join("_", semanticTags)))
                     : inputPath.getParent().resolve(generateOutputFileName(String.join("_", semanticTags)));
-            processFile(inputFile, outputPath.toString(), semanticTags);
+            processFile(inputFile, outputPath.toString(), semanticTags, activeOnly);
 
         } catch (IllegalArgumentException e) {
             System.err.println("Error: " + e.getMessage());
@@ -31,13 +48,7 @@ public class ExtractSemanticTags {
             throw e;
         } catch (IOException e) {
             System.err.println("Error processing files: " + e.getMessage());
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
-
-    private static void validateArgs(String[] args) {
-        if (args.length < 2) {
-            throw new IllegalArgumentException("Insufficient arguments provided.");
+            throw new RuntimeException(e);
         }
     }
 
@@ -73,7 +84,8 @@ public class ExtractSemanticTags {
         return fileName.replaceAll("[\\\\/:*?\"<>|]", "_");
     }
 
-    private static void processFile(String inputFile, String outputFile, String[] semanticTags) throws IOException {
+    private static void processFile(String inputFile, String outputFile, String[] semanticTags, boolean activeOnly)
+            throws IOException {
         Path outputPath = Paths.get(outputFile);
 
         // Delete the path if it exists (whether file or directory)
@@ -92,27 +104,45 @@ public class ExtractSemanticTags {
 
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
                 BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+            processStream(reader, writer, semanticTags, activeOnly);
+        }
+        System.out.println("Results written to: " + outputFile);
+    }
 
-            String headerLine = Objects.requireNonNull(reader.readLine(), "Header line cannot be null");
-            writer.write(headerLine);
-            writer.newLine();
+    public static void processStream(BufferedReader reader, BufferedWriter writer, String[] semanticTags)
+            throws IOException {
+        processStream(reader, writer, semanticTags, false);
+    }
 
-            int recordsFound = 0;
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] columns = line.split(TSV_DELIMITER);
-                if (columns.length > SEMANTIC_TAG_COLUMN &&
-                        matchesAnyTag(columns[SEMANTIC_TAG_COLUMN], semanticTags)) {
-                    writer.write(line);
-                    writer.newLine();
-                    recordsFound++;
+    public static void processStream(BufferedReader reader, BufferedWriter writer, String[] semanticTags,
+            boolean activeOnly) throws IOException {
+        String headerLine = Objects.requireNonNull(reader.readLine(), "Header line cannot be null");
+        writer.write(headerLine);
+        writer.newLine();
+
+        int recordsFound = 0;
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] columns = line.split(TSV_DELIMITER);
+
+            // Check active status if requested
+            if (activeOnly) {
+                // Assuming active column is at index 1 (based on ExtractTerms output)
+                if (columns.length > 1 && !"1".equals(columns[1])) {
+                    continue;
                 }
             }
 
-            System.out.println(String.format("Found %d records with semantic tags '%s'",
-                    recordsFound, String.join("', '", semanticTags)));
-            System.out.println("Results written to: " + outputFile);
+            if (columns.length > SEMANTIC_TAG_COLUMN &&
+                    matchesAnyTag(columns[SEMANTIC_TAG_COLUMN], semanticTags)) {
+                writer.write(line);
+                writer.newLine();
+                recordsFound++;
+            }
         }
+
+        System.out.println(String.format("Found %d records with semantic tags '%s'",
+                recordsFound, String.join("', '", semanticTags)));
     }
 
     private static boolean matchesAnyTag(String column, String[] semanticTags) {
@@ -127,12 +157,8 @@ public class ExtractSemanticTags {
         // Extract the tag without parentheses
         String semanticTag = column.substring(lastOpenParen + 1, lastCloseParen);
 
-        for (String searchTag : semanticTags) {
-            // Remove quotes if present
-            searchTag = searchTag.replaceAll("^\"|\"$", "");
-
-            // Exact match only
-            if (semanticTag.equals(searchTag)) {
+        for (String tag : semanticTags) {
+            if (tag.equals(semanticTag)) {
                 return true;
             }
         }
@@ -140,7 +166,9 @@ public class ExtractSemanticTags {
     }
 
     private static void printUsage() {
-        System.out.println("Usage: java ExtractSemanticTags <input_file.tsv> <semantic_tag1> [semantic_tag2 ...]");
+        System.out.println(
+                "Usage: java ExtractSemanticTags [--active-only] <input_file.tsv> <semantic_tag1> [semantic_tag2 ...]");
+        System.out.println("  --active-only: (Optional) If specified, only active concepts will be extracted.");
         System.out.println("  input_file.tsv: Path to the input TSV file");
         System.out.println("  semantic_tags: One or more semantic tags to search for from the SNOMED CT OpenSet file ");
     }

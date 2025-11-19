@@ -1,6 +1,6 @@
 # SNOMED CT GPS file creator
 
-A utility tool for extracting and processing SNOMED CT terminology data from an RF2 release and producing the SNOMED International GPS format.
+This utility tool extracts and processes basic SNOMED CT concept and term data from an RF2 release, producing the SNOMED International GPS format.  It also filters the GPS file based on a specified set of semantic tags via the command line or a user-friendly web page.
 
 ## Overview
 

@@ -32,6 +32,8 @@ This will create an executable JAR file in the `target` directory (e.g., `snomed
 
 ### 1. Web Interface (Recommended)
 
+![](web-ui.jpeg)
+
 The easiest way to filter your GPS data is using the built-in web server.
 
 1.  Start the server:

@@ -70,11 +70,11 @@ java -jar target/snomed-gps-extractor*.jar extract-tags <input-file> <semantic-t
 
 Parameters:
 - `input-file`: Path and filename of the processed SNOMED CT file (generally the output from ExtractTerms or the downloaded OpenSet file)
-- `semantic-tag`: The semantic tags to filter by, using the full tag name in quotes, e.g. "disorder" or "medicinal product"
+- `semantic-tag`: The semantic tags to filter by, using the full tag name in quotes, e.g. "disorder" or "body structure"
 
 Example:
 ```bash
-java -jar target/snomed-gps-extractor*.jar extract-tags demoFiles/openSCT.txt disorder "medicinal product"
+java -jar target/snomed-gps-extractor*.jar extract-tags demoFiles/openSCT.txt "disorder" "body structure"
 ```
 
 Common semantic tags :

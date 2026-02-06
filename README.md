@@ -2,6 +2,8 @@
 
 A powerful utility tool for extracting and processing SNOMED CT terminology data from an RF2 release. It produces the SNOMED International GPS (Global Patient Set) format and offers advanced filtering capabilities via both a command-line interface (CLI) and a modern web interface.
 
+You can also download the published GPS directly from SNOMED International - https://www.snomed.org/gps.
+
 ## Features
 
 *   [**Term Extraction**](#GPS-file-creation): Extracts concepts and terms from SNOMED CT RF2 release files into a simplified TSV format (ID, Active Status, FSN, Term).
@@ -11,6 +13,8 @@ A powerful utility tool for extracting and processing SNOMED CT terminology data
 *   **CLI Support**: Robust command-line tools for automation and batch processing.
 
 ## Prerequisites
+
+These are the prerequisites for running the extractor software locally.
 
 *   **Java Runtime Environment (JRE)**: Version 17 or higher.
 *   **Maven**: For building the project.

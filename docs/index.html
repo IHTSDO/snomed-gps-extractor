@@ -4,12 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNOMED GPS Extractor</title>
+    <title>SNOMED CT GPS Semantic Tag Filtering</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                    },
                     colors: {
                         'snomed-blue': '#00a7e1',
                         'snomed-dark': '#00384b',
@@ -66,11 +73,11 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-5">
                     <a href="https://www.snomed.org" target="_blank" rel="noopener noreferrer" class="flex-shrink-0">
-                        <img src="SNOMED International+tagline_RGB-large.png" alt="SNOMED International" class="h-12">
+                        <img src="SNOMED International+tagline_RGB-large.png" alt="SNOMED International" class="h-16">
                     </a>
                     <div class="border-l border-slate-300 pl-5">
-                        <h1 class="text-lg font-bold text-snomed-dark">GPS Extractor</h1>
-                        <p class="text-xs text-snomed-text font-medium tracking-wide">Semantic Tag Filtering</p>
+                        <h1 class="text-lg font-bold text-snomed-dark">SNOMED CT GPS Semantic Tag Filtering</h1>
+                        <p class="text-xs text-snomed-text font-medium tracking-wide">From SNOMED International</p>
                     </div>
                 </div>
             </div>
@@ -118,7 +125,8 @@
                         </p>
                     </div>
                 </div>
-                <p class="mt-3 text-xs text-slate-400 text-center">Your file is processed entirely in your browser and is never uploaded to any server.</p>
+                <p class="mt-3 text-xs text-slate-400 text-center">Your file is processed entirely in your browser and
+                    is never uploaded to any server.</p>
             </div>
 
             <!-- Configuration Card -->
@@ -576,7 +584,7 @@
         function processWithFileReader(file, tagsSet, activeOnly, statusDiv) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     statusDiv.textContent = 'Processing file locally...';
                     const text = e.target.result;
                     const lines = text.split(/\r?\n/);
@@ -609,7 +617,7 @@
 
                     resolve({ outputParts, recordCount });
                 };
-                reader.onerror = function() {
+                reader.onerror = function () {
                     reject(new Error('Failed to read file'));
                 };
                 reader.readAsText(file, 'UTF-8');

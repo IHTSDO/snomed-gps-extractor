@@ -4,58 +4,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNOMED GPS Extractor</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'snomed-blue': '#00a7e1',
-                        'snomed-dark': '#00384b',
-                        'snomed-teal': '#12506b',
-                        'snomed-orange': '#f8a73d',
-                        'snomed-text': '#434a55',
-                        'snomed-light': '#c2e3f6',
-                    },
-                    backgroundImage: {
-                        'glass-gradient': 'linear-gradient(135deg, #f6f8fd 0%, #e5eeff 100%)',
+    <title>SNOMED CT GPS Semantic Tag Filtering/title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+            rel="stylesheet">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['Montserrat', 'sans-serif'],
+                        },
+                        colors: {
+                            'snomed-blue': '#00a7e1',
+                            'snomed-dark': '#00384b',
+                            'snomed-teal': '#12506b',
+                            'snomed-orange': '#f8a73d',
+                            'snomed-text': '#434a55',
+                            'snomed-light': '#c2e3f6',
+                        },
+                        backgroundImage: {
+                            'glass-gradient': 'linear-gradient(135deg, #f6f8fd 0%, #e5eeff 100%)',
+                        }
                     }
                 }
             }
-        }
-    </script>
-    <style>
-        .glass-card {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-        }
+        </script>
+        <style>
+            .glass-card {
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+            }
 
-        .glass-input {
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(209, 213, 219, 0.5);
-        }
+            .glass-input {
+                background: rgba(255, 255, 255, 0.5);
+                backdrop-filter: blur(4px);
+                border: 1px solid rgba(209, 213, 219, 0.5);
+            }
 
-        .glass-input:focus {
-            background: rgba(255, 255, 255, 0.9);
-            border-color: #00a7e1;
-        }
+            .glass-input:focus {
+                background: rgba(255, 255, 255, 0.9);
+                border-color: #00a7e1;
+            }
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, #e0f2fe 0%, #f0f9ff 100%);
-            z-index: -1;
-            pointer-events: none;
-        }
-    </style>
+            body::before {
+                content: '';
+                position: fixed;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle at center, #e0f2fe 0%, #f0f9ff 100%);
+                z-index: -1;
+                pointer-events: none;
+            }
+        </style>
 </head>
 
 <body class="bg-slate-50 min-h-screen text-slate-800 font-sans antialiased">
@@ -69,8 +76,8 @@
                         <img src="SNOMED International+tagline_RGB-large.png" alt="SNOMED International" class="h-12">
                     </a>
                     <div class="border-l border-slate-300 pl-5">
-                        <h1 class="text-lg font-bold text-snomed-dark">GPS Extractor</h1>
-                        <p class="text-xs text-snomed-text font-medium tracking-wide">Semantic Tag Filtering</p>
+                        <h1 class="text-lg font-bold text-snomed-dark">SNOMED CT GPS Semantic Tag Filtering</h1>
+                        <p class="text-xs text-snomed-text font-medium tracking-wide">from SNOMED International</p>
                     </div>
                 </div>
             </div>

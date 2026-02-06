@@ -48,11 +48,11 @@ java -jar target/snomed-gps-extractor-1.0.jar extract-terms [--active-only] <rf2
 
 ### Web Interface (Recommended)
 
-![](web-ui.jpeg)
-
 The easiest way to filter your GPS data is using the web interface. No installation required — it runs entirely in your browser.
 
 **[Open the Web Interface](https://ihtsdo.github.io/snomed-gps-extractor/)**
+
+![](web-ui.jpeg)
 
 Your file is processed locally in the browser and is never uploaded to any server.
 

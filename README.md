@@ -6,7 +6,7 @@ A powerful utility tool for extracting and processing SNOMED CT terminology data
 
 *   [**Term Extraction**](#GPS-file-creation): Extracts concepts and terms from SNOMED CT RF2 release files into a simplified TSV format (ID, Active Status, FSN, Term).
 *   [**Semantic Tag Filtering**](#semantic-tag-filtering): Filter the extracted data based on SNOMED CT semantic tags (e.g., "disorder", "finding", "substance").
-*   [**Web Interface**](#web-interface-recommended): A user-friendly, dark-themed web UI for easy file uploading and semantic tag filtering.
+*   [**Web Interface**](#web-interface-recommended): A user-friendly web UI — [runs directly in your browser](https://ihtsdo.github.io/snomed-gps-extractor/) with no installation needed.
 *   **Active Concept Filtering**: Optionally filter to include only active concepts.
 *   **CLI Support**: Robust command-line tools for automation and batch processing.
 
@@ -46,27 +46,20 @@ java -jar target/snomed-gps-extractor-1.0.jar extract-terms [--active-only] <rf2
 
 ![](web-ui.jpeg)
 
-The easiest way to filter your GPS data is using the built-in web server.
+The easiest way to filter your GPS data is using the web interface. No installation required — it runs entirely in your browser.
 
-1.  Start the server:
-    ```bash
-    java -jar target/snomed-gps-extractor-1.0.jar server
-    ```
-    *Or simply:*
-    ```bash
-    java -jar target/snomed-gps-extractor-1.0.jar
-    ```
+**[Open the Web Interface](https://ihtsdo.github.io/snomed-gps-extractor/)**
 
-2.  Open your browser and navigate to `http://localhost:8080`.
+Your file is processed locally in the browser and is never uploaded to any server.
 
-3.  **Upload**: Drag and drop your SNOMED CT GPS file (TSV format).
-4.  **Configure**:
+1.  **Upload**: Drag and drop your SNOMED CT GPS file (TSV format).
+2.  **Configure**:
     *   Toggle **"Active Concepts Only"** to exclude inactive records.
     *   Select the desired **Semantic Tags** from the categorized list.
     *   Add any **Custom Tags** if needed.
-5.  **Process**: Click "Process & Download" to get your filtered dataset.
+3.  **Process**: Click "Process & Download" to get your filtered dataset.
 
-#### Command line
+### Command line
 
 Filter an existing GPS TSV file by semantic tags using the command line.
 

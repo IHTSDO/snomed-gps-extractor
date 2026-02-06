@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNOMED GPS Extractor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'snomed-blue': '#00A4E4',
+                        'snomed-dark': '#003B5C',
+                    },
+                    backgroundImage: {
+                        'glass-gradient': 'linear-gradient(135deg, #f6f8fd 0%, #e5eeff 100%)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(209, 213, 219, 0.5);
+        }
+
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: #00A4E4;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, #e0f2fe 0%, #f0f9ff 100%);
+            z-index: -1;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans antialiased">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 glass-card border-b border-white/50 shadow-sm">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center space-x-4">
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-snomed-blue to-snomed-dark rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                    <span class="text-white text-xl font-bold">S</span>
+                </div>
+                <div>
+                    <h1
+                        class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-snomed-dark to-snomed-blue">
+                        SNOMED GPS Extractor</h1>
+                    <p class="text-xs text-slate-500 font-medium tracking-wide uppercase">Semantic Tag Filtering Service
+                    </p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12 max-w-5xl">
+        <form id="filterForm" class="space-y-8">
+
+            <!-- File Upload Card -->
+            <div
+                class="glass-card rounded-2xl shadow-xl shadow-blue-900/5 p-6 transition-all duration-300 hover:shadow-blue-900/10">
+                <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center">
+                    <span
+                        class="bg-gradient-to-br from-snomed-blue to-blue-600 text-white w-6 h-6 rounded-md flex items-center justify-center mr-3 text-xs font-bold shadow-md shadow-blue-200">1</span>
+                    Upload SNOMED CT GPS
+                </h2>
+                <div id="dropZone"
+                    class="group relative border-2 border-dashed border-slate-300 rounded-xl p-6 text-center transition-all duration-300 hover:border-snomed-blue hover:bg-blue-50/50 cursor-pointer overflow-hidden">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/50 group-hover:to-transparent transition-all duration-500">
+                    </div>
+                    <input type="file" id="file" name="file" accept=".tsv,.txt" required
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    <div
+                        class="relative z-0 pointer-events-none transform group-hover:scale-105 transition-transform duration-300 flex flex-col items-center justify-center">
+                        <div class="flex items-center justify-center space-x-3">
+                            <div
+                                class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center group-hover:bg-white group-hover:shadow-md transition-all duration-300">
+                                <svg class="h-5 w-5 text-snomed-blue" stroke="currentColor" fill="none"
+                                    viewBox="0 0 48 48">
+                                    <path
+                                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-slate-600 font-medium text-sm">Drag & drop GPS file or browse</p>
+                                <p class="text-xs text-slate-400">Supports .tsv and .txt</p>
+                            </div>
+                        </div>
+                        <p id="fileName"
+                            class="mt-2 text-snomed-dark font-bold bg-blue-50 inline-block px-3 py-0.5 rounded-full text-xs opacity-0 transition-opacity duration-300">
+                        </p>
+                    </div>
+                </div>
+                <p class="mt-3 text-xs text-slate-400 text-center">Your file is processed entirely in your browser and is never uploaded to any server.</p>
+            </div>
+
+            <!-- Configuration Card -->
+            <div
+                class="glass-card rounded-2xl shadow-xl shadow-blue-900/5 p-8 transition-all duration-300 hover:shadow-blue-900/10">
+                <h2 class="text-lg font-bold text-slate-700 mb-6 flex items-center">
+                    <span
+                        class="bg-gradient-to-br from-snomed-blue to-blue-600 text-white w-6 h-6 rounded-md flex items-center justify-center mr-3 text-xs font-bold shadow-md shadow-blue-200">2</span>
+                    Configuration
+                </h2>
+
+                <!-- Active Only Toggle -->
+                <div class="bg-white/60 rounded-xl p-5 mb-8 border border-white/60 shadow-sm">
+                    <label class="flex items-center justify-between cursor-pointer group">
+                        <div>
+                            <p class="font-bold text-slate-700 group-hover:text-snomed-dark transition-colors">Active
+                                Concepts Only</p>
+                            <p class="text-sm text-slate-500 mt-1">Filter out inactive concepts from the result</p>
+                        </div>
+                        <div class="relative">
+                            <input type="checkbox" id="activeOnly" name="activeOnly" class="sr-only peer">
+                            <div
+                                class="w-14 h-8 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all after:duration-300 peer-checked:bg-snomed-blue shadow-inner">
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Semantic Tags -->
+                <h3 class="text-lg font-bold text-slate-700 mb-6 flex items-center">
+                    <span class="w-1 h-6 bg-snomed-blue rounded-full mr-3"></span>
+                    Select Semantic Tags
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
+                    <!-- Clinical -->
+                    <div
+                        class="bg-white/40 rounded-xl p-5 border border-white/50 hover:bg-white/60 transition-colors duration-300">
+                        <h4
+                            class="font-bold text-snomed-blue text-xs uppercase tracking-wider mb-4 border-b border-blue-100 pb-2">
+                            Clinical</h4>
+                        <div class="space-y-3">
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="body structure"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Body
+                                    structure</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="cell"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Cell</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="cell structure"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Cell
+                                    structure</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="morphologic abnormality"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Morphologic
+                                    abnormality</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="finding"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Clinical
+                                    finding</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="disorder"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Disorder</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="organism"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Organism</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="procedure"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Procedure</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="regime/therapy"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Regime/Therapy</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="situation"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Situation</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="specimen"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Specimen</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="substance"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Substance</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pharmaceutical / Product -->
+                    <div
+                        class="bg-white/40 rounded-xl p-5 border border-white/50 hover:bg-white/60 transition-colors duration-300">
+                        <h4
+                            class="font-bold text-snomed-blue text-xs uppercase tracking-wider mb-4 border-b border-blue-100 pb-2">
+                            Pharmaceutical / Product</h4>
+                        <div class="space-y-3">
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="product"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Product</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="clinical drug"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Clinical
+                                    drug</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="medicinal product"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Medicinal
+                                    product</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="medicinal product form"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Medicinal
+                                    product form</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="physical object"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Physical
+                                    object</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Metadata & Qualifiers -->
+                    <div
+                        class="bg-white/40 rounded-xl p-5 border border-white/50 hover:bg-white/60 transition-colors duration-300">
+                        <h4
+                            class="font-bold text-snomed-blue text-xs uppercase tracking-wider mb-4 border-b border-blue-100 pb-2">
+                            Metadata & Qualifiers</h4>
+                        <div class="space-y-3">
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="attribute"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Attribute</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="core metadata concept"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Core
+                                    metadata concept</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="foundation metadata concept"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Foundation
+                                    metadata concept</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="link assertion"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Link
+                                    assertion</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="namespace concept"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Namespace
+                                    concept</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="qualifier value"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Qualifier
+                                    value</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="record artifact"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Record
+                                    artifact</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Other -->
+                    <div
+                        class="bg-white/40 rounded-xl p-5 border border-white/50 hover:bg-white/60 transition-colors duration-300">
+                        <h4
+                            class="font-bold text-snomed-blue text-xs uppercase tracking-wider mb-4 border-b border-blue-100 pb-2">
+                            Other</h4>
+                        <div class="space-y-3">
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="environment"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Environment</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="geographic location"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Geographic
+                                    location</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="event"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Event</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="observable entity"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Observable
+                                    entity</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="physical force"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Physical
+                                    force</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="social concept"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Social
+                                    concept</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="staging scale"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Staging
+                                    scale</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="assessment scale"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Assessment
+                                    scale</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" name="tag" value="tumor staging"
+                                    class="w-4 h-4 text-snomed-blue border-slate-300 rounded focus:ring-snomed-blue focus:ring-offset-0 transition-all duration-200">
+                                <span
+                                    class="text-sm text-slate-600 group-hover:text-snomed-dark transition-colors">Tumor
+                                    staging</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Tags -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-3">Additional Tags</label>
+                    <input type="text" id="customTags" name="customTags"
+                        class="glass-input w-full px-5 py-4 rounded-xl focus:ring-2 focus:ring-snomed-blue focus:border-transparent transition-all duration-300 placeholder-slate-400"
+                        placeholder="Type any other tags here, separated by commas...">
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submitBtn"
+                class="w-full bg-gradient-to-r from-snomed-dark to-snomed-blue text-white py-5 px-6 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/20 hover:shadow-xl hover:shadow-blue-900/30 transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                Process & Download
+            </button>
+
+            <!-- Status Message -->
+            <div id="status" class="text-center font-medium min-h-6 text-lg"></div>
+        </form>
+    </main>
+
+    <!-- Footer -->
+    <footer
+        class="text-center py-8 text-slate-500 text-sm space-y-3 border-t border-white/50 bg-white/30 backdrop-blur-sm">
+        <p>&copy; 2026 SNOMED GPS Extractor, SNOMED International.</p>
+        <a href="https://github.com/rorydavidson/snomed-gps-extractor" target="_blank" rel="noopener noreferrer"
+            class="inline-flex items-center space-x-2 text-slate-600 hover:text-snomed-blue transition-colors duration-300 bg-white/50 px-4 py-2 rounded-full hover:bg-white/80">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill-rule="evenodd"
+                    d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                    clip-rule="evenodd" />
+            </svg>
+            <span class="font-medium">View on GitHub</span>
+        </a>
+    </footer>
+
+    <script>
+        // File Upload Interaction
+        const fileInput = document.getElementById('file');
+        const dropZone = document.getElementById('dropZone');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileNameDisplay.textContent = e.target.files[0].name;
+                fileNameDisplay.classList.remove('opacity-0');
+                dropZone.classList.add('border-snomed-blue', 'bg-blue-50/50');
+            }
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-snomed-blue', 'bg-blue-50/50');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            if (!fileInput.files.length) {
+                dropZone.classList.remove('border-snomed-blue', 'bg-blue-50/50');
+            }
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileNameDisplay.textContent = e.dataTransfer.files[0].name;
+                fileNameDisplay.classList.remove('opacity-0');
+                dropZone.classList.add('border-snomed-blue', 'bg-blue-50/50');
+            }
+        });
+
+        /**
+         * Process a TSV file using the streaming API (for large files).
+         * Faithfully ports the logic from ExtractSemanticTags.processStream().
+         */
+        async function processWithStreams(file, tagsSet, activeOnly, statusDiv) {
+            const outputParts = [];
+            let recordCount = 0;
+            let isFirstLine = true;
+            let remainder = '';
+            let bytesProcessed = 0;
+
+            const rawStream = file.stream();
+            const reader = rawStream.pipeThrough(new TextDecoderStream('utf-8')).getReader();
+
+            // We need to track bytes separately since TextDecoderStream consumes the raw stream.
+            // Approximate progress using character count (close enough for UTF-8 text files).
+            let charsProcessed = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                charsProcessed += value.length;
+                const pct = Math.min(99, Math.round((charsProcessed / file.size) * 100));
+                statusDiv.textContent = 'Processing file locally... ' + pct + '%';
+
+                const text = remainder + value;
+                const lines = text.split('\n');
+                remainder = lines.pop(); // last element may be incomplete
+
+                for (const rawLine of lines) {
+                    const line = rawLine.endsWith('\r') ? rawLine.slice(0, -1) : rawLine;
+                    if (isFirstLine) {
+                        outputParts.push(line + '\n');
+                        isFirstLine = false;
+                        continue;
+                    }
+                    if (line === '') continue;
+
+                    const columns = line.split('\t');
+                    if (activeOnly && columns.length > 1 && columns[1] !== '1') continue;
+                    if (columns.length < 3) continue;
+
+                    const fsn = columns[2];
+                    const lastOpen = fsn.lastIndexOf('(');
+                    const lastClose = fsn.lastIndexOf(')');
+                    if (lastOpen === -1 || lastClose === -1 || lastOpen > lastClose) continue;
+
+                    const tag = fsn.substring(lastOpen + 1, lastClose);
+                    if (tagsSet.has(tag)) {
+                        outputParts.push(line + '\n');
+                        recordCount++;
+                    }
+                }
+            }
+
+            // Handle final remainder line
+            if (remainder !== '') {
+                const line = remainder.endsWith('\r') ? remainder.slice(0, -1) : remainder;
+                if (line !== '') {
+                    if (isFirstLine) {
+                        outputParts.push(line + '\n');
+                    } else {
+                        const columns = line.split('\t');
+                        let skip = false;
+                        if (activeOnly && columns.length > 1 && columns[1] !== '1') skip = true;
+                        if (!skip && columns.length >= 3) {
+                            const fsn = columns[2];
+                            const lastOpen = fsn.lastIndexOf('(');
+                            const lastClose = fsn.lastIndexOf(')');
+                            if (lastOpen !== -1 && lastClose !== -1 && lastOpen < lastClose) {
+                                const tag = fsn.substring(lastOpen + 1, lastClose);
+                                if (tagsSet.has(tag)) {
+                                    outputParts.push(line + '\n');
+                                    recordCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return { outputParts, recordCount };
+        }
+
+        /**
+         * Fallback: Process file using FileReader.readAsText() for older browsers.
+         */
+        function processWithFileReader(file, tagsSet, activeOnly, statusDiv) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    statusDiv.textContent = 'Processing file locally...';
+                    const text = e.target.result;
+                    const lines = text.split(/\r?\n/);
+                    const outputParts = [];
+                    let recordCount = 0;
+
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i];
+                        if (i === 0) {
+                            outputParts.push(line + '\n');
+                            continue;
+                        }
+                        if (line === '') continue;
+
+                        const columns = line.split('\t');
+                        if (activeOnly && columns.length > 1 && columns[1] !== '1') continue;
+                        if (columns.length < 3) continue;
+
+                        const fsn = columns[2];
+                        const lastOpen = fsn.lastIndexOf('(');
+                        const lastClose = fsn.lastIndexOf(')');
+                        if (lastOpen === -1 || lastClose === -1 || lastOpen > lastClose) continue;
+
+                        const tag = fsn.substring(lastOpen + 1, lastClose);
+                        if (tagsSet.has(tag)) {
+                            outputParts.push(line + '\n');
+                            recordCount++;
+                        }
+                    }
+
+                    resolve({ outputParts, recordCount });
+                };
+                reader.onerror = function() {
+                    reject(new Error('Failed to read file'));
+                };
+                reader.readAsText(file, 'UTF-8');
+            });
+        }
+
+        // Form Submission
+        document.getElementById('filterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const customTagsInput = document.getElementById('customTags');
+            const activeOnly = document.getElementById('activeOnly').checked;
+            const submitBtn = document.getElementById('submitBtn');
+            const statusDiv = document.getElementById('status');
+
+            if (!fileInput.files[0]) {
+                alert('Please select a file');
+                return;
+            }
+
+            // Collect selected tags
+            const selectedTags = Array.from(document.querySelectorAll('input[name="tag"]:checked'))
+                .map(cb => cb.value);
+
+            // Add custom tags
+            if (customTagsInput.value.trim()) {
+                const customTags = customTagsInput.value.split(',').map(t => t.trim()).filter(t => t);
+                selectedTags.push(...customTags);
+            }
+
+            if (selectedTags.length === 0) {
+                alert('Please select at least one semantic tag');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const tagsSet = new Set(selectedTags);
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<svg class="animate-spin h-6 w-6 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            statusDiv.textContent = 'Processing file locally...';
+            statusDiv.className = 'text-center font-medium min-h-6 text-snomed-blue animate-pulse';
+
+            try {
+                let result;
+                if (typeof TextDecoderStream !== 'undefined' && file.stream) {
+                    result = await processWithStreams(file, tagsSet, activeOnly, statusDiv);
+                } else {
+                    result = await processWithFileReader(file, tagsSet, activeOnly, statusDiv);
+                }
+
+                const { outputParts, recordCount } = result;
+
+                if (recordCount === 0) {
+                    statusDiv.textContent = 'No matching records found. Try different tags.';
+                    statusDiv.className = 'text-center font-bold min-h-6 text-amber-600';
+                    return;
+                }
+
+                // Create and trigger download
+                const blob = new Blob(outputParts, { type: 'text/tab-separated-values;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'filtered_' + file.name;
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                statusDiv.textContent = 'Download started! (' + recordCount + ' records found)';
+                statusDiv.className = 'text-center font-bold min-h-6 text-emerald-600';
+            } catch (error) {
+                console.error('Error:', error);
+                statusDiv.textContent = 'Error processing file. Please try again.';
+                statusDiv.className = 'text-center font-bold min-h-6 text-rose-600';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Process & Download';
+            }
+        });
+    </script>
+</body>
+
+</html>

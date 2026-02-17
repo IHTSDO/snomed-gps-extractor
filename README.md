@@ -39,10 +39,11 @@ Extract raw terms from SNOMED CT RF2 files to create a GPS-compatible TSV file.
 
 ### Using SNOMED CT RF2 Release ZIP file
 ```bash
-java -jar target/snomed-gps-extractor-1.0.jar extract-terms [--active-only] <rf2-zip-file> <output-file>
+java -jar target/snomed-gps-extractor-1.0.jar extract-terms [--active-only] [--inactive-since YYYYMMDD] <rf2-zip-file> <output-file>
 ```
 
 *   `--active-only`: (Optional) If set, only active concepts are extracted. Default is all concepts.
+*   `--inactive-since YYYYMMDD`: (Optional) Only include inactive concepts whose effective date is on or after the given date. Active concepts are always included regardless. This is useful for excluding concepts that were inactivated before a certain release.
 
 ## Semantic Tag Filtering
 

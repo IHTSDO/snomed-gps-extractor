@@ -33,9 +33,9 @@ public class Main {
         System.err.println("Usage: java -jar <jarfile> <command> [args...]");
         System.err.println("Commands:");
         System.err.println("  server (or no arguments) - Start the web interface");
-        System.err.println("  extract-terms [--active-only] <zip-file> <output-file>");
+        System.err.println("  extract-terms [--active-only] [--inactive-since YYYYMMDD] <zip-file> <output-file>");
         System.err.println(
-                "  extract-terms [--active-only] <concepts-file> <descriptions-file> <preferences-file> <output-file>");
+                "  extract-terms [--active-only] [--inactive-since YYYYMMDD] <concepts-file> <descriptions-file> <preferences-file> <output-file>");
         System.err.println("  extract-tags [--active-only] <input-file> <semantic-tag1> [semantic-tag2 ...]");
     }
 }

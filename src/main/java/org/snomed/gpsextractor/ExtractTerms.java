@@ -22,6 +22,7 @@ public class ExtractTerms {
     // File processing constants
     private static final String TAB_DELIMITER = "\t";
     private static final int CONCEPT_ID_INDEX = 0;
+    private static final int EFFECTIVE_TIME_INDEX = 1;
     private static final int ACTIVE_INDEX = 2;
     private static final int TYPE_ID_INDEX = 6;
     private static final int TERM_INDEX = 7;
@@ -33,26 +34,43 @@ public class ExtractTerms {
     public static void main(String[] args) {
         try {
             boolean activeOnly = false;
+            String inactiveSinceDate = null;
             String[] fileArgs = args;
 
-            // Check for active-only flag
-            if (args.length > 0 && args[0].equals("--active-only")) {
-                activeOnly = true;
-                fileArgs = new String[args.length - 1];
-                System.arraycopy(args, 1, fileArgs, 0, args.length - 1);
+            // Parse flags
+            int argIndex = 0;
+            while (argIndex < args.length && args[argIndex].startsWith("--")) {
+                if (args[argIndex].equals("--active-only")) {
+                    activeOnly = true;
+                    argIndex++;
+                } else if (args[argIndex].equals("--inactive-since")) {
+                    argIndex++;
+                    if (argIndex < args.length) {
+                        inactiveSinceDate = args[argIndex];
+                        argIndex++;
+                    } else {
+                        System.err.println("Error: --inactive-since requires a date argument (YYYYMMDD)");
+                        return;
+                    }
+                } else {
+                    break;
+                }
             }
 
+            fileArgs = new String[args.length - argIndex];
+            System.arraycopy(args, argIndex, fileArgs, 0, args.length - argIndex);
+
             if (fileArgs.length == 2 && fileArgs[0].toLowerCase().endsWith(".zip")) {
-                processZip(fileArgs[0], fileArgs[1], activeOnly);
+                processZip(fileArgs[0], fileArgs[1], activeOnly, inactiveSinceDate);
             } else if (validateArgs(fileArgs)) {
-                processFiles(fileArgs[0], fileArgs[1], fileArgs[2], fileArgs[3], activeOnly);
+                processFiles(fileArgs[0], fileArgs[1], fileArgs[2], fileArgs[3], activeOnly, inactiveSinceDate);
             }
         } catch (IOException e) {
             System.err.println("Error processing files: " + e.getMessage());
         }
     }
 
-    private static void processZip(String zipFile, String outputFile, boolean activeOnly) throws IOException {
+    private static void processZip(String zipFile, String outputFile, boolean activeOnly, String inactiveSinceDate) throws IOException {
         Path tempDir = Files.createTempDirectory("snomed-extract");
         try {
             String conceptsFile = null;
@@ -76,7 +94,7 @@ public class ExtractTerms {
             }
 
             if (conceptsFile != null && descriptionsFile != null && preferencesFile != null) {
-                processFiles(conceptsFile, descriptionsFile, preferencesFile, outputFile, activeOnly);
+                processFiles(conceptsFile, descriptionsFile, preferencesFile, outputFile, activeOnly, inactiveSinceDate);
             } else {
                 System.err.println("Could not find all required files in ZIP.");
             }
@@ -100,8 +118,8 @@ public class ExtractTerms {
     }
 
     private static void processFiles(String conceptsFile, String descriptionsFile,
-            String preferencesFile, String outputFile, boolean activeOnly) throws IOException {
-        Map<String, String> concepts = readConcepts(conceptsFile, activeOnly);
+            String preferencesFile, String outputFile, boolean activeOnly, String inactiveSinceDate) throws IOException {
+        Map<String, String> concepts = readConcepts(conceptsFile, activeOnly, inactiveSinceDate);
         Map<String, String> descriptionPreferences = readPreferences(preferencesFile);
         Map<String, String> fsnDescriptions = new HashMap<>();
         Map<String, String> preferredTerms = new HashMap<>();
@@ -114,15 +132,16 @@ public class ExtractTerms {
     private static boolean validateArgs(String[] args) {
         if (args.length < 4) {
             System.err.println("Usage:");
-            System.err.println("  1. java ExtractTerms [--active-only] <zip-file> <output-file>");
-            System.err.println("  2. java ExtractTerms [--active-only] <concepts-rf2-file> <descriptions-rf2-file> " +
+            System.err.println("  1. java ExtractTerms [--active-only] [--inactive-since YYYYMMDD] <zip-file> <output-file>");
+            System.err.println("  2. java ExtractTerms [--active-only] [--inactive-since YYYYMMDD] <concepts-rf2-file> <descriptions-rf2-file> " +
                     "<languagePreferences-rf2-file> <output-file>");
+            System.err.println("  --inactive-since: Only include inactive concepts with effectiveTime on or after the given date");
             return false;
         }
         return true;
     }
 
-    private static Map<String, String> readConcepts(String filename, boolean activeOnly) throws IOException {
+    private static Map<String, String> readConcepts(String filename, boolean activeOnly, String inactiveSinceDate) throws IOException {
         Map<String, String> concepts = new HashMap<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             String line;
@@ -131,9 +150,17 @@ public class ExtractTerms {
                 String[] parts = line.split(TAB_DELIMITER);
                 if (parts.length > ACTIVE_INDEX) {
                     boolean isActive = ACTIVE_FLAG.equals(parts[ACTIVE_INDEX]);
-                    if (!activeOnly || isActive) {
-                        concepts.put(parts[CONCEPT_ID_INDEX], parts[ACTIVE_INDEX]); // Store active status
+                    if (activeOnly && !isActive) {
+                        continue;
                     }
+                    // If inactive-since date is set, exclude inactive concepts with effectiveTime before that date
+                    if (inactiveSinceDate != null && !isActive && parts.length > EFFECTIVE_TIME_INDEX) {
+                        String effectiveTime = parts[EFFECTIVE_TIME_INDEX];
+                        if (effectiveTime.compareTo(inactiveSinceDate) < 0) {
+                            continue;
+                        }
+                    }
+                    concepts.put(parts[CONCEPT_ID_INDEX], parts[ACTIVE_INDEX]);
                 }
             }
         }

@@ -83,6 +83,7 @@ Temporary Items
 #do not include any RF2 files
 *Snapshot*.txt
 sct2*.txt
+*.txt
 
 target/
 target

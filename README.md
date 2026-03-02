@@ -10,6 +10,7 @@ You can also download the published GPS directly from SNOMED International - htt
 *   [**Semantic Tag Filtering**](#semantic-tag-filtering): Filter the extracted data based on SNOMED CT semantic tags (e.g., "disorder", "finding", "substance").
 *   [**Web Interface**](#web-interface-recommended): A user-friendly web UI — [runs directly in your browser](https://ihtsdo.github.io/snomed-gps-extractor/) with no installation needed.
 *   **Active Concept Filtering**: Optionally filter to include only active concepts.
+*   [**Output Validation**](#validating-a-gps-extraction): Cross-reference a GPS file against its source RF2 release to verify concept counts, FSNs, preferred terms, and active flags.
 *   **CLI Support**: Robust command-line tools for automation and batch processing.
 
 ## Prerequisites
@@ -75,6 +76,43 @@ java -jar target/snomed-gps-extractor-1.0.jar extract-tags [--active-only] <inpu
 *   `--active-only`: (Optional) Filter for active concepts only.
 *   `input-file`: The GPS file to filter.
 *   `tag`: One or more semantic tags (e.g., "disorder", "body structure").
+
+## Validating a GPS Extraction
+
+After producing a GPS file, use the `validate` command to cross-reference it against the RF2 release it was extracted from. The tool independently re-reads the three source RF2 files to build a ground-truth oracle, then checks every row of the GPS output against it.
+
+```bash
+java -jar target/snomed-gps-extractor-1.1.jar validate \
+    [--active-only] [--inactive-since YYYYMMDD] \
+    <rf2-zip-file> <gps-output-tsv> <report-file>
+```
+
+Pass the same filter flags (`--active-only`, `--inactive-since`) that were used during extraction so the oracle applies the same concept selection rules.
+
+**Example:**
+```bash
+java -jar target/snomed-gps-extractor-1.1.jar validate \
+    --inactive-since 20230101 \
+    SnomedCT_Release_INT_20240101.zip \
+    gps_output.tsv \
+    validation_report.txt
+```
+
+The report lists the checks performed, the concept count from the source, the number of violations found, an overall PASS/FAIL result, and — if any violations were found — a numbered list describing each one.
+
+**Checks performed:**
+
+| # | Check |
+|---|-------|
+| 1 | Output file header is exactly: `id \| active \| fsn \| term` |
+| 2 | Every data row has exactly 4 tab-separated columns |
+| 3 | No concept ID appears more than once in the output |
+| 4 | Every concept in the source RF2 (after applying filter flags) is present in the output |
+| 5 | No concept appears in the output that is absent from the source RF2 or was filtered out |
+| 6 | The `active` flag on each row matches the source concept file |
+| 7 | The FSN on each row is the active FSN from the source descriptions file |
+| 8 | The preferred term on each row is the active Preferred synonym per the language refset |
+| 9 | Every non-empty FSN ends with a parenthesised semantic tag, e.g. `(disorder)` |
 
 ## File Formats
 

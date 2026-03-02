@@ -23,6 +23,9 @@ public class Main {
             case "extract-tags":
                 ExtractSemanticTags.main(commandArgs);
                 break;
+            case "validate":
+                GpsValidator.main(commandArgs);
+                break;
             default:
                 System.err.println("Unknown command: " + command);
                 printUsage();
@@ -37,5 +40,6 @@ public class Main {
         System.err.println(
                 "  extract-terms [--active-only] [--inactive-since YYYYMMDD] <concepts-file> <descriptions-file> <preferences-file> <output-file>");
         System.err.println("  extract-tags [--active-only] <input-file> <semantic-tag1> [semantic-tag2 ...]");
+        System.err.println("  validate [--active-only] [--inactive-since YYYYMMDD] <rf2-zip> <gps-output-tsv> <report-file>");
     }
 }

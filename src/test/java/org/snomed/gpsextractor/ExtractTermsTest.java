@@ -55,7 +55,7 @@ class ExtractTermsTest {
 
                 assertTrue(Files.exists(outputFile));
                 String content = Files.readString(outputFile);
-                assertTrue(content.contains("id\tactive\tfsn\tterm"));
+                assertTrue(content.contains("ConceptID\tActive\tFSN\tUSPreferredTerm"));
                 assertTrue(content.contains("123\t1\tHeart (FSN)\tHeart"));
         }
 
@@ -96,7 +96,7 @@ class ExtractTermsTest {
                 ExtractTerms.main(args);
 
                 assertTrue(Files.exists(outputFile));
-                assertEquals("id\tactive\tfsn\tterm\n",
+                assertEquals("ConceptID\tActive\tFSN\tUSPreferredTerm\n",
                                 Files.readString(outputFile));
         }
 

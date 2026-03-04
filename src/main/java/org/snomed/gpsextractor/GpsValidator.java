@@ -18,7 +18,7 @@ import java.util.*;
  *            <rf2-zip> <gps-output-tsv> <report-file>
  *
  * Checks performed:
- *  - Header is exactly "id\tactive\tfsn\tterm"
+ *  - Header is exactly "ConceptID\tActive\tFSN\tUSPreferredTerm"
  *  - No duplicate concept IDs in the output
  *  - No concept is missing that should be present
  *  - No concept is present that should be absent / filtered out
@@ -226,8 +226,8 @@ public class GpsValidator {
 
         try (BufferedReader r = Files.newBufferedReader(outputPath)) {
             String header = r.readLine();
-            if (!"id\tactive\tfsn\tterm".equals(header)) {
-                violations.add("Header must be 'id\\tactive\\tfsn\\tterm', got: '" + header + "'");
+            if (!"ConceptID\tActive\tFSN\tUSPreferredTerm".equals(header)) {
+                violations.add("Header must be 'ConceptID\\tActive\\tFSN\\tUSPreferredTerm', got: '" + header + "'");
             }
             String line;
             while ((line = r.readLine()) != null) {
@@ -379,7 +379,7 @@ public class GpsValidator {
             w.println();
             w.println("Checks performed");
             w.println("----------------");
-            w.println("  [1] Output file header is exactly: id | active | fsn | term");
+            w.println("  [1] Output file header is exactly: ConceptID | Active | FSN | USPreferredTerm");
             w.println("  [2] Every data row has exactly 4 tab-separated columns");
             w.println("  [3] No concept ID appears more than once in the output");
             w.println("  [4] Every concept in the source RF2 (after applying filter flags) is present in the output");

@@ -248,7 +248,7 @@ public class ExtractTerms {
     }
 
     private static void writeHeader(FileWriter writer) throws IOException {
-        writer.write("id\tactive\tfsn\tterm\n");
+        writer.write("ConceptID\tActive\tFSN\tUSPreferredTerm\n");
     }
 
     private static void writeTerm(FileWriter writer,

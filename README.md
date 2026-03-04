@@ -104,7 +104,7 @@ The report lists the checks performed, the concept count from the source, the nu
 
 | # | Check |
 |---|-------|
-| 1 | Output file header is exactly: `id \| active \| fsn \| term` |
+| 1 | Output file header is exactly: `ConceptID \| Active \| FSN \| USPreferredTerm` |
 | 2 | Every data row has exactly 4 tab-separated columns |
 | 3 | No concept ID appears more than once in the output |
 | 4 | Every concept in the source RF2 (after applying filter flags) is present in the output |
@@ -119,8 +119,8 @@ The report lists the checks performed, the concept count from the source, the nu
 ### Output Format (GPS)
 The tool produces a Tab-Separated Values (TSV) file with the following columns:
 
-| id | active | fsn | term |
-|----|--------|-----|------|
+| ConceptID | Active | FSN | USPreferredTerm |
+|-----------|--------|-----|----------------|
 | 73211009 | 1 | Diabetes mellitus (disorder) | Diabetes mellitus |
 | 101009 | 0 | Inactive concept (disorder) | Inactive concept |
 

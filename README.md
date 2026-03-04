@@ -26,12 +26,12 @@ These are the prerequisites for running the extractor software locally.
 Clone the repository and build the project using Maven:
 
 ```bash
-git clone https://github.com/rorydavidson/snomed-gps-extractor.git
+git clone https://github.com/IHTSDO/snomed-gps-extractor.git
 cd snomed-gps-extractor
 mvn clean package
 ```
 
-This will create an executable JAR file in the `target` directory (e.g., `snomed-gps-extractor-1.0.jar`).
+This will create an executable JAR file in the `target` directory (e.g., `snomed-gps-extractor*.jar`).
 
 
 ## SNOMED CT GPS file creation
@@ -40,7 +40,7 @@ Extract raw terms from SNOMED CT RF2 files to create a GPS-compatible TSV file.
 
 ### Using SNOMED CT RF2 Release ZIP file
 ```bash
-java -jar target/snomed-gps-extractor-1.0.jar extract-terms [--active-only] [--inactive-since YYYYMMDD] <rf2-zip-file> <output-file>
+java -jar target/snomed-gps-extractor*.jar extract-terms [--active-only] [--inactive-since YYYYMMDD] <rf2-zip-file> <output-file>
 ```
 
 *   `--active-only`: (Optional) If set, only active concepts are extracted. Default is all concepts.
@@ -70,7 +70,7 @@ Your file is processed locally in the browser and is never uploaded to any serve
 Filter an existing GPS TSV file by semantic tags using the command line.
 
 ```bash
-java -jar target/snomed-gps-extractor-1.0.jar extract-tags [--active-only] <input-file> <tag1> [tag2 ...]
+java -jar target/snomed-gps-extractor*.jar extract-tags [--active-only] <input-file> <tag1> [tag2 ...]
 ```
 
 *   `--active-only`: (Optional) Filter for active concepts only.
@@ -82,7 +82,7 @@ java -jar target/snomed-gps-extractor-1.0.jar extract-tags [--active-only] <inpu
 After producing a GPS file, use the `validate` command to cross-reference it against the RF2 release it was extracted from. The tool independently re-reads the three source RF2 files to build a ground-truth oracle, then checks every row of the GPS output against it.
 
 ```bash
-java -jar target/snomed-gps-extractor-1.1.jar validate \
+java -jar target/snomed-gps-extractor*.jar validate \
     [--active-only] [--inactive-since YYYYMMDD] \
     <rf2-zip-file> <gps-output-tsv> <report-file>
 ```
@@ -91,9 +91,9 @@ Pass the same filter flags (`--active-only`, `--inactive-since`) that were used 
 
 **Example:**
 ```bash
-java -jar target/snomed-gps-extractor-1.1.jar validate \
+java -jar target/snomed-gps-extractor*.jar validate \
     --inactive-since 20230101 \
-    SnomedCT_Release_INT_20240101.zip \
+    SnomedCT_Release_INT_20260101.zip \
     gps_output.tsv \
     validation_report.txt
 ```

@@ -52,6 +52,10 @@ public class GpsValidator {
                 argIndex++;
                 if (argIndex < args.length) {
                     inactiveSince = args[argIndex];
+                    if (!inactiveSince.matches("\\d{8}")) {
+                        System.err.println("Error: --inactive-since date must be in YYYYMMDD format (e.g. 20230101)");
+                        System.exit(1);
+                    }
                     argIndex++;
                 } else {
                     System.err.println("Error: --inactive-since requires a date argument (YYYYMMDD)");

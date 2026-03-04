@@ -47,6 +47,10 @@ public class ExtractTerms {
                     argIndex++;
                     if (argIndex < args.length) {
                         inactiveSinceDate = args[argIndex];
+                        if (!inactiveSinceDate.matches("\\d{8}")) {
+                            System.err.println("Error: --inactive-since date must be in YYYYMMDD format (e.g. 20230101)");
+                            return;
+                        }
                         argIndex++;
                     } else {
                         System.err.println("Error: --inactive-since requires a date argument (YYYYMMDD)");
@@ -62,8 +66,10 @@ public class ExtractTerms {
 
             if (fileArgs.length == 2 && fileArgs[0].toLowerCase().endsWith(".zip")) {
                 processZip(fileArgs[0], fileArgs[1], activeOnly, inactiveSinceDate);
-            } else if (validateArgs(fileArgs)) {
+            } else if (fileArgs.length == 4) {
                 processFiles(fileArgs[0], fileArgs[1], fileArgs[2], fileArgs[3], activeOnly, inactiveSinceDate);
+            } else {
+                System.err.println("Usage: extract-terms [--active-only] [--inactive-since YYYYMMDD] <rf2-zip-file> <output-file>");
             }
         } catch (IOException e) {
             System.err.println("Error processing files: " + e.getMessage());
@@ -127,18 +133,6 @@ public class ExtractTerms {
         readDescriptions(descriptionsFile, descriptionPreferences, fsnDescriptions, preferredTerms, concepts);
 
         writeOutput(outputFile, concepts, fsnDescriptions, preferredTerms);
-    }
-
-    private static boolean validateArgs(String[] args) {
-        if (args.length < 4) {
-            System.err.println("Usage:");
-            System.err.println("  1. java ExtractTerms [--active-only] [--inactive-since YYYYMMDD] <zip-file> <output-file>");
-            System.err.println("  2. java ExtractTerms [--active-only] [--inactive-since YYYYMMDD] <concepts-rf2-file> <descriptions-rf2-file> " +
-                    "<languagePreferences-rf2-file> <output-file>");
-            System.err.println("  --inactive-since: Only include inactive concepts with effectiveTime on or after the given date");
-            return false;
-        }
-        return true;
     }
 
     private static Map<String, String> readConcepts(String filename, boolean activeOnly, String inactiveSinceDate) throws IOException {
@@ -230,7 +224,7 @@ public class ExtractTerms {
     }
 
     private static boolean isValidDescriptionLine(String[] parts) {
-        return parts.length > TYPE_ID_INDEX &&
+        return parts.length > TERM_INDEX &&
                 ACTIVE_FLAG.equals(parts[ACTIVE_INDEX]);
     }
 

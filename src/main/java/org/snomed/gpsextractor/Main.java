@@ -2,12 +2,7 @@ package org.snomed.gpsextractor;
 
 public class Main {
     public static void main(String[] args) {
-        if (args.length == 0 || (args.length == 1 && "server".equalsIgnoreCase(args[0]))) {
-            Application.main(args);
-            return;
-        }
-
-        if (args.length < 1) {
+        if (args.length == 0) {
             printUsage();
             return;
         }
@@ -17,6 +12,9 @@ public class Main {
         System.arraycopy(args, 1, commandArgs, 0, args.length - 1);
 
         switch (command) {
+            case "server":
+                Application.main(commandArgs);
+                break;
             case "extract-terms":
                 ExtractTerms.main(commandArgs);
                 break;
@@ -35,10 +33,8 @@ public class Main {
     private static void printUsage() {
         System.err.println("Usage: java -jar <jarfile> <command> [args...]");
         System.err.println("Commands:");
-        System.err.println("  server (or no arguments) - Start the web interface");
-        System.err.println("  extract-terms [--active-only] [--inactive-since YYYYMMDD] <zip-file> <output-file>");
-        System.err.println(
-                "  extract-terms [--active-only] [--inactive-since YYYYMMDD] <concepts-file> <descriptions-file> <preferences-file> <output-file>");
+        System.err.println("  server                     - Start the web interface on port 8080");
+        System.err.println("  extract-terms [--active-only] [--inactive-since YYYYMMDD] <rf2-zip-file> <output-file>");
         System.err.println("  extract-tags [--active-only] <input-file> <semantic-tag1> [semantic-tag2 ...]");
         System.err.println("  validate [--active-only] [--inactive-since YYYYMMDD] <rf2-zip> <gps-output-tsv> <report-file>");
     }

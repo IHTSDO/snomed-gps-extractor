@@ -89,3 +89,5 @@ target/
 target
 release-spec-20251119.pdf
 CLAUDE.md
+.claude/
+.vscode/

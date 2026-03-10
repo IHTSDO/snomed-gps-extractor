@@ -1,6 +1,7 @@
 package org.snomed.gpsextractor;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.Objects;
 
@@ -102,8 +103,8 @@ public class ExtractSemanticTags {
             Files.createDirectories(outputPath.getParent());
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-                BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(inputFile), StandardCharsets.UTF_8);
+                BufferedWriter writer = Files.newBufferedWriter(Paths.get(outputFile), StandardCharsets.UTF_8)) {
             processStream(reader, writer, semanticTags, activeOnly);
         }
         System.out.println("Results written to: " + outputFile);

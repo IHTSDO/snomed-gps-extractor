@@ -84,6 +84,8 @@ Temporary Items
 *Snapshot*.txt
 sct2*.txt
 *.txt
+!src/main/resources/allowed_semantic_tags.txt
+!sources.txt
 
 target/
 target

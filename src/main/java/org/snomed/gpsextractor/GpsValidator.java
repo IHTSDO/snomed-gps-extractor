@@ -656,9 +656,15 @@ public class GpsValidator {
                 }
 
                 // NO_BLANK_PREFERRED_TERM — active concepts only (requirement 6 / fix 7)
+                // Skip the check when the oracle itself expects a blank preferred term
+                // (e.g. the concept has only an acceptable synonym, or no refset entry at all).
+                // In those cases a blank output is correct, so firing would be a false positive.
                 if (isActive && term.trim().isEmpty()) {
-                    addFinding(findings, ValidationTest.NO_BLANK_PREFERRED_TERM, id, exceptions,
-                        "Concept " + id + ": preferred term is blank (active concept)");
+                    String[] exp = expected.get(id);
+                    if (exp == null || !exp[2].trim().isEmpty()) {
+                        addFinding(findings, ValidationTest.NO_BLANK_PREFERRED_TERM, id, exceptions,
+                            "Concept " + id + ": preferred term is blank (active concept)");
+                    }
                 }
 
                 // NO_TRAILING_WHITESPACE — WARNING
@@ -1111,7 +1117,7 @@ public class GpsValidator {
             ValidationTest test  = entry.getKey();
             List<Finding>  group = entry.getValue();
             w.printf("  [%s] %-45s %,d violation(s)%n", test.code, test.name + ":", group.size());
-            w.println("  " + test.description);
+            w.println("  " + test.name() + " — " + test.description);
             w.println();
         }
 

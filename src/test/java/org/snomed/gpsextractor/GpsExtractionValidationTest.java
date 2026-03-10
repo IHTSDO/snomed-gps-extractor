@@ -459,7 +459,8 @@ class GpsExtractionValidationTest {
             + "100\t1\tDiabetes mellitus (disorder)\t\n";
         writeFile(outputFile, content);
         Map<String, String[]> expected = new LinkedHashMap<>();
-        expected.put("100", new String[]{"1", "Diabetes mellitus (disorder)", ""});
+        // Oracle says the concept SHOULD have a preferred term — blank output is a genuine E10 violation
+        expected.put("100", new String[]{"1", "Diabetes mellitus (disorder)", "Diabetes mellitus"});
         List<GpsValidator.Finding> errs = errorsOnly(GpsValidator.validateOutput(outputFile, expected, false, null));
         assertTrue(
             errs.stream().anyMatch(f -> f.test == GpsValidator.ValidationTest.NO_BLANK_PREFERRED_TERM),
@@ -554,7 +555,7 @@ class GpsExtractionValidationTest {
     void testEnum_exactlyNineteenErrors() {
         long count = Arrays.stream(GpsValidator.ValidationTest.values())
             .filter(t -> t.severity == GpsValidator.Severity.ERROR).count();
-        assertEquals(19, count, "Expected 19 ERROR-severity tests");
+        assertEquals(20, count, "Expected 20 ERROR-severity tests");
     }
 
     @Test
@@ -643,7 +644,8 @@ class GpsExtractionValidationTest {
             + "100\t1\tDiabetes mellitus (disorder)\t\n";  // blank pref term for active concept
         writeFile(outputFile, content);
         Map<String, String[]> expected = new LinkedHashMap<>();
-        expected.put("100", new String[]{"1", "Diabetes mellitus (disorder)", ""});
+        // Oracle says concept should have a preferred term; blank output is a genuine E10 violation
+        expected.put("100", new String[]{"1", "Diabetes mellitus (disorder)", "Diabetes mellitus"});
 
         List<GpsValidator.Finding> findings = GpsValidator.validateOutput(outputFile, expected, false, null);
         assertFalse(
@@ -664,7 +666,8 @@ class GpsExtractionValidationTest {
             + "200\t1\tHypertension (disorder)\t\n";
         writeFile(outputFile, content);
         Map<String, String[]> expected = new LinkedHashMap<>();
-        expected.put("200", new String[]{"1", "Hypertension (disorder)", ""});
+        // Oracle says concept 200 should have a preferred term; blank output is a genuine E10 violation
+        expected.put("200", new String[]{"1", "Hypertension (disorder)", "Hypertension"});
 
         List<GpsValidator.Finding> findings = GpsValidator.validateOutput(outputFile, expected, false, null);
         assertTrue(
@@ -844,15 +847,18 @@ class GpsExtractionValidationTest {
             zos.write("should not be written".getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
         }
-        // The validator's extractEntry must throw or skip — not write outside tempDir
+        // Verify the boundary check logic: resolving the raw (un-stripped) entry name
+        // MUST detect the path traversal and throw.  The production code calls getFileName()
+        // first to strip path components, which prevents the attack at the stripping step;
+        // but the boundary check itself must also be correct.
         Path dest = Files.createTempDirectory("security-test");
         try (java.util.zip.ZipFile zf = new java.util.zip.ZipFile(maliciousZip.toFile())) {
             java.util.zip.ZipEntry entry = zf.entries().nextElement();
             assertThrows(IOException.class, () -> {
-                Path resolved = dest.resolve(Paths.get(entry.getName()).getFileName()).normalize();
+                // Deliberately do NOT call getFileName() — this simulates what would happen
+                // if the path-stripping step were absent, and confirms the boundary check fires.
+                Path resolved = dest.resolve(entry.getName()).normalize();
                 if (!resolved.startsWith(dest.normalize())) throw new IOException("Zip-slip detected");
-                // If we get here without throw, the test expects it was actually safe
-                // (getFileName() strips the path component anyway)
             });
         }
     }

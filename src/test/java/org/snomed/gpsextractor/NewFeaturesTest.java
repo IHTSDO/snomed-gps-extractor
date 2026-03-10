@@ -21,6 +21,16 @@ class NewFeaturesTest {
     @TempDir
     Path tempDir;
 
+    @BeforeEach
+    void clearExceptionsDir() throws IOException {
+        Path exDir = Paths.get(ExceptionList.EXCEPTIONS_DIR);
+        if (Files.exists(exDir)) {
+            try (var walk = Files.walk(exDir)) {
+                walk.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+            }
+        }
+    }
+
     // =========================================================================
     // README content tests
     // =========================================================================
@@ -150,7 +160,7 @@ class NewFeaturesTest {
     }
 
     @Test
-    void testImplementationGuide_missingFileCausesError() {
+    void testImplementationGuide_missingFileCausesError() throws IOException {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         PrintStream originalErr = System.err;
         System.setErr(new PrintStream(err));
@@ -589,22 +599,27 @@ class NewFeaturesTest {
 
     @Test
     void testZipBomb_extractTerms_rejectsOversizedDeclaredEntry() throws IOException {
-        // Build a ZIP where the declared entry size exceeds the limit
-        Path zipPath = tempDir.resolve("bomb.zip");
-        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipPath.toFile()))) {
-            ZipEntry entry = new ZipEntry("Snapshot/Terminology/sct2_Concept_Snapshot_INT_20240101.txt");
-            // Declare a size just over the limit
-            entry.setSize(ExtractTerms.MAX_ENTRY_UNCOMPRESSED_BYTES + 1);
-            zos.putNextEntry(entry);
-            zos.write("id\n".getBytes());
-            zos.closeEntry();
+        // Temporarily lower the per-entry size limit so we can trigger it with small test data.
+        // Note: ZipOutputStream DEFLATED entries do not preserve a setSize() value in the central
+        // directory, so we test via the LimitedInputStream byte-counter path instead.
+        long savedMax = ExtractTerms.MAX_ENTRY_UNCOMPRESSED_BYTES;
+        ExtractTerms.MAX_ENTRY_UNCOMPRESSED_BYTES = 2L; // allow only 2 bytes per entry
+        try {
+            Path zipPath = tempDir.resolve("bomb.zip");
+            try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipPath.toFile()))) {
+                ZipEntry entry = new ZipEntry("Snapshot/Terminology/sct2_Concept_Snapshot_INT_20240101.txt");
+                zos.putNextEntry(entry);
+                zos.write("id\n".getBytes()); // 3 bytes — exceeds the limit of 2
+                zos.closeEntry();
+            }
+            // Expect an IOException about the size limit, not silent acceptance
+            IOException ex = assertThrows(IOException.class,
+                () -> ExtractTerms.main(new String[]{zipPath.toString()}),
+                "ExtractTerms must throw when a ZIP entry's content exceeds the size limit");
+            assertNotNull(ex);
+        } finally {
+            ExtractTerms.MAX_ENTRY_UNCOMPRESSED_BYTES = savedMax;
         }
-        // Expect an IOException about the size limit, not silent acceptance
-        IOException ex = assertThrows(IOException.class,
-            () -> ExtractTerms.main(new String[]{zipPath.toString()}),
-            "ExtractTerms must throw when a ZIP entry's declared size exceeds the limit");
-        // The message may come from the IOException or be wrapped; just check it propagates
-        assertNotNull(ex);
     }
 
     @Test

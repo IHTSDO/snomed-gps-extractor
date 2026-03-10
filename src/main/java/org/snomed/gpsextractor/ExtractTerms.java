@@ -72,94 +72,101 @@ public class ExtractTerms {
     // CLI entry point
     // =========================================================================
 
-    public static void main(String[] args) {
-        try {
-            boolean activeOnly              = false;
-            String  inactiveSinceDate       = null;
-            String  implementationGuideFile = null;
+    public static void main(String[] args) throws IOException {
+        boolean activeOnly              = false;
+        String  inactiveSinceDate       = null;
+        String  implementationGuideFile = null;
 
-            int argIndex = 0;
-            while (argIndex < args.length && args[argIndex].startsWith("--")) {
-                switch (args[argIndex]) {
-                    case "--active-only":
-                        activeOnly = true;
-                        argIndex++;
-                        break;
-                    case "--inactive-since":
-                        argIndex++;
-                        if (argIndex < args.length) {
-                            inactiveSinceDate = args[argIndex];
-                            if (!inactiveSinceDate.matches("\\d{8}")) {
-                                System.err.println("Error: --inactive-since date must be in YYYYMMDD format (e.g. 20230101)");
-                                return;
-                            }
-                            argIndex++;
-                        } else {
-                            System.err.println("Error: --inactive-since requires a date argument (YYYYMMDD)");
+        int argIndex = 0;
+        while (argIndex < args.length && args[argIndex].startsWith("--")) {
+            switch (args[argIndex]) {
+                case "--active-only":
+                    activeOnly = true;
+                    argIndex++;
+                    break;
+                case "--inactive-since":
+                    argIndex++;
+                    if (argIndex < args.length) {
+                        inactiveSinceDate = args[argIndex];
+                        if (!inactiveSinceDate.matches("\\d{8}")) {
+                            System.err.println("Error: --inactive-since date must be in YYYYMMDD format (e.g. 20230101)");
                             return;
                         }
-                        break;
-                    case "--implementation-guide":
                         argIndex++;
-                        if (argIndex < args.length) {
-                            implementationGuideFile = args[argIndex];
-                            argIndex++;
-                        } else {
-                            System.err.println("Error: --implementation-guide requires a file path argument");
-                            return;
-                        }
-                        break;
-                    default:
-                        System.err.println("Error: Unknown option: " + args[argIndex]);
-                        printUsage();
+                    } else {
+                        System.err.println("Error: --inactive-since requires a date argument (YYYYMMDD)");
                         return;
-                }
+                    }
+                    break;
+                case "--implementation-guide":
+                    argIndex++;
+                    if (argIndex < args.length) {
+                        implementationGuideFile = args[argIndex];
+                        argIndex++;
+                    } else {
+                        System.err.println("Error: --implementation-guide requires a file path argument");
+                        return;
+                    }
+                    break;
+                default:
+                    System.err.println("Error: Unknown option: " + args[argIndex]);
+                    printUsage();
+                    return;
+            }
+        }
+
+        String[] fileArgs = Arrays.copyOfRange(args, argIndex, args.length);
+
+        if (activeOnly && inactiveSinceDate != null) {
+            System.err.println("Warning: --inactive-since has no effect when --active-only is also set.");
+        }
+
+        // Validate implementation guide if provided
+        if (implementationGuideFile != null) {
+            Path igPath = Paths.get(implementationGuideFile).toAbsolutePath().normalize();
+            if (!Files.exists(igPath)) {
+                System.err.println("Error: Implementation guide file not found: " + implementationGuideFile);
+                return;
+            }
+            if (!Files.isReadable(igPath)) {
+                System.err.println("Error: Implementation guide file is not readable: " + implementationGuideFile);
+                return;
+            }
+        }
+
+        if (fileArgs.length >= 1 && fileArgs[0].toLowerCase().endsWith(".zip")) {
+            // ZIP input → produce output package
+            String inputZip = fileArgs[0];
+            Path inputPath = Paths.get(inputZip);
+            if (!Files.exists(inputPath)) { System.err.println("Error: Input file not found: " + inputZip); return; }
+            if (!Files.isReadable(inputPath)) { System.err.println("Error: Input file is not readable: " + inputZip); return; }
+
+            String outputPath = fileArgs.length >= 2 ? fileArgs[1] : deriveOutputFileName(inputZip);
+            Path outputDir = Paths.get(outputPath).getParent();
+            if (outputDir != null && !Files.exists(outputDir)) {
+                System.err.println("Error: Output directory does not exist: " + outputDir);
+                return;
+            }
+            System.out.println("Output file: " + outputPath);
+
+            if (outputPath.toLowerCase().endsWith(".zip")) {
+                // Output is a ZIP package (normal production mode)
+                processZip(inputZip, outputPath, activeOnly, inactiveSinceDate, implementationGuideFile);
+            } else {
+                // Output is a raw TSV path — extract and write TSV directly
+                processZipToTsv(inputZip, outputPath, activeOnly, inactiveSinceDate);
             }
 
-            String[] fileArgs = Arrays.copyOfRange(args, argIndex, args.length);
-
-            if (activeOnly && inactiveSinceDate != null) {
-                System.err.println("Warning: --inactive-since has no effect when --active-only is also set.");
-            }
-
-            // Validate implementation guide if provided
-            if (implementationGuideFile != null) {
-                Path igPath = Paths.get(implementationGuideFile).toAbsolutePath().normalize();
-                if (!Files.exists(igPath)) {
-                    System.err.println("Error: Implementation guide file not found: " + implementationGuideFile);
-                    return;
-                }
-                if (!Files.isReadable(igPath)) {
-                    System.err.println("Error: Implementation guide file is not readable: " + implementationGuideFile);
-                    return;
-                }
-            }
-
-            if (fileArgs.length >= 1 && fileArgs[0].toLowerCase().endsWith(".zip")) {
-                // ZIP input → produce ZIP output package
-                String inputZip = fileArgs[0];
-                Path inputPath = Paths.get(inputZip);
-                if (!Files.exists(inputPath)) { System.err.println("Error: Input file not found: " + inputZip); return; }
-                if (!Files.isReadable(inputPath)) { System.err.println("Error: Input file is not readable: " + inputZip); return; }
-
-                String outputZip = fileArgs.length >= 2 ? fileArgs[1] : deriveOutputFileName(inputZip);
-                Path outputDir = Paths.get(outputZip).getParent();
-                if (outputDir != null && !Files.exists(outputDir)) {
-                    System.err.println("Error: Output directory does not exist: " + outputDir);
-                    return;
-                }
-                System.out.println("Output file: " + outputZip);
-                processZip(inputZip, outputZip, activeOnly, inactiveSinceDate, implementationGuideFile);
-
-            } else if (fileArgs.length == 4) {
-                // 4 individual files → write raw TSV directly (used by tests and direct invocation)
+        } else if (fileArgs.length == 4) {
+            // 4 individual files → write raw TSV directly (used by tests and direct invocation)
+            try {
                 processFiles(fileArgs[0], fileArgs[1], fileArgs[2], fileArgs[3],
                     activeOnly, inactiveSinceDate);
-            } else {
-                printUsage();
+            } catch (IOException e) {
+                System.err.println("Error processing files: " + e.getMessage());
             }
-        } catch (IOException e) {
-            System.err.println("Error processing files: " + e.getMessage());
+        } else {
+            printUsage();
         }
     }
 
@@ -204,8 +211,62 @@ public class ExtractTerms {
     }
 
     // =========================================================================
-    // ZIP processing pipeline  (RF2 ZIP → GPS ZIP)
+    // ZIP processing pipeline  (RF2 ZIP → GPS ZIP or TSV)
     // =========================================================================
+
+    /**
+     * Extracts RF2 files from a ZIP and writes a raw TSV to {@code outputTsv}.
+     * Used when the caller supplies a non-.zip output path.
+     */
+    private static void processZipToTsv(String zipFile, String outputTsv,
+            boolean activeOnly, String inactiveSinceDate) throws IOException {
+
+        if (!isValidZip(zipFile)) {
+            System.err.println("Error: Input file is not a valid ZIP file: " + zipFile);
+            return;
+        }
+
+        Path tempDir = Files.createTempDirectory("snomed-extract");
+        try {
+            String conceptsFile     = null;
+            String descriptionsFile = null;
+            String preferencesFile  = null;
+
+            try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(zipFile)) {
+                Enumeration<? extends ZipEntry> entries = zip.entries();
+                while (entries.hasMoreElements()) {
+                    ZipEntry entry = entries.nextElement();
+                    String name = entry.getName();
+                    if (name.contains("Snapshot/Terminology/sct2_Concept_Snapshot_INT")) {
+                        conceptsFile = extractFileSecure(zip, entry, tempDir);
+                    } else if (name.contains("Snapshot/Terminology/sct2_Description_Snapshot-en_INT")) {
+                        descriptionsFile = extractFileSecure(zip, entry, tempDir);
+                    } else if (name.contains("Snapshot/Refset/Language/der2_cRefset_LanguageSnapshot-en_INT")) {
+                        preferencesFile = extractFileSecure(zip, entry, tempDir);
+                    }
+                }
+            }
+
+            if (conceptsFile == null || descriptionsFile == null || preferencesFile == null) {
+                System.err.println("Error: Could not find all required RF2 files in ZIP. Missing:");
+                if (conceptsFile == null)     System.err.println("  - sct2_Concept_Snapshot_INT");
+                if (descriptionsFile == null) System.err.println("  - sct2_Description_Snapshot-en_INT");
+                if (preferencesFile == null)  System.err.println("  - der2_cRefset_LanguageSnapshot-en_INT");
+                return;
+            }
+
+            Map<String, String> concepts        = readConcepts(conceptsFile, activeOnly, inactiveSinceDate);
+            Map<String, String> descPrefs       = readPreferences(preferencesFile);
+            Map<String, String> fsnDescriptions = new HashMap<>();
+            Map<String, String> preferredTerms  = new HashMap<>();
+            readDescriptions(descriptionsFile, descPrefs, fsnDescriptions, preferredTerms, concepts);
+
+            writeTsv(outputTsv, concepts, fsnDescriptions, preferredTerms);
+
+        } finally {
+            deleteTempDir(tempDir);
+        }
+    }
 
     private static void processZip(String zipFile, String outputZip,
             boolean activeOnly, String inactiveSinceDate,
@@ -264,7 +325,7 @@ public class ExtractTerms {
      * compressed payload expands to an unbounded amount of data on disk or in memory.
      * The largest real-world SNOMED CT release files are well under 1 GB uncompressed.
      */
-    static final long MAX_ENTRY_UNCOMPRESSED_BYTES = 2L * 1024 * 1024 * 1024; // 2 GB
+    static long MAX_ENTRY_UNCOMPRESSED_BYTES = 2L * 1024 * 1024 * 1024; // 2 GB
 
     /**
      * Security-hardened file extraction from ZIP.
@@ -583,7 +644,7 @@ public class ExtractTerms {
             + "controlled by SNOMED International, and may have been modified and may be out of date. "
             + "Any recipient of this document who has received it by other means is encouraged to obtain "
             + "a copy directly from SNOMED International (https://www.snomed.org/gps).\n\n"
-            + "Dependent International Edition version: " + monthYear + "\n\n"
+            + "Dependent International Edition version: " + monthYear + " (" + effectiveDateYYYYMMDD + ")\n\n"
             + "Scope: This GPS Release package includes all Active concepts from the dependent International "
             + "Edition version, plus all Inactive concepts that were inactivated after the migration to RF2 "
             + "in 20120101.\n\n"

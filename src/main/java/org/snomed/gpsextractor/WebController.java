@@ -171,10 +171,20 @@ public class WebController {
         if (rawFilename == null || rawFilename.isBlank()) {
             return "filtered_output.tsv";
         }
+        // Truncate at the first CR or LF: everything after the newline is attacker-controlled
+        // header content, not part of the filename (prevents header-injection via CRLF).
+        int crIdx = rawFilename.indexOf('\r');
+        int lfIdx = rawFilename.indexOf('\n');
+        int cutAt = rawFilename.length();
+        if (crIdx != -1) cutAt = Math.min(cutAt, crIdx);
+        if (lfIdx != -1) cutAt = Math.min(cutAt, lfIdx);
+        String name = rawFilename.substring(0, cutAt);
         // Strip path separators (prevent path traversal semantics in Content-Disposition)
-        String name = rawFilename.replace("/", "").replace("\\", "");
-        // Strip characters that break or inject into HTTP header values
-        name = UNSAFE_FILENAME_CHARS.matcher(name).replaceAll("_");
+        name = name.replace("/", "").replace("\\", "");
+        // Strip path traversal sequences that survive separator removal (e.g. "....etcpasswd")
+        name = name.replace("..", "_");
+        // Strip the double-quote character that would break the quoted header value
+        name = name.replace("\"", "_");
         // Prepend prefix so the download is clearly identified
         name = "filtered_" + name;
         // Final fallback guard

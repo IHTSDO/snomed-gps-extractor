@@ -60,7 +60,7 @@ class ExtractTermsTest {
         }
 
         @Test
-        void testInsufficientArguments() {
+        void testInsufficientArguments() throws IOException {
                 String[] args = { conceptsFile.toString(), descriptionsFile.toString() };
                 ExtractTerms.main(args);
                 // Should print usage message and return without throwing exception

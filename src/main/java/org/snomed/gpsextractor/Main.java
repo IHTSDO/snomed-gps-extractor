@@ -16,7 +16,11 @@ public class Main {
                 Application.main(cmdArgs);
                 break;
             case "extract-terms":
-                ExtractTerms.main(cmdArgs);
+                try {
+                    ExtractTerms.main(cmdArgs);
+                } catch (java.io.IOException e) {
+                    System.err.println("Error processing files: " + e.getMessage());
+                }
                 break;
             case "extract-tags":
                 ExtractSemanticTags.main(cmdArgs);

@@ -49,6 +49,7 @@ public class Main {
         System.err.println();
         System.err.println("  extract-terms [--active-only] [--inactive-since YYYYMMDD]");
         System.err.println("                [--implementation-guide <guide-file>]");
+        System.err.println("                [--readme-template <template-file>]");
         System.err.println("                <rf2-zip-file> [output-file]");
         System.err.println("      Extract GPS data from an RF2 release ZIP");
         System.err.println();

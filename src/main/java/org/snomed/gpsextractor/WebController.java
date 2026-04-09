@@ -47,6 +47,25 @@ public class WebController {
     private static final Pattern SAFE_TAG_PATTERN = Pattern.compile("[a-zA-Z0-9 \\-]+");
 
     /**
+     * Maximum permitted upload file size for in-application processing (100 MB).
+     *
+     * <p>Spring's {@code spring.servlet.multipart.max-file-size} property is set to 500 MB
+     * and acts as the outer backstop — it prevents the servlet container from accepting
+     * payloads larger than that at all.  However, this application processes the upload
+     * entirely in a {@link java.io.ByteArrayOutputStream} held in heap memory, so a file
+     * approaching the Spring limit would require ~1 GB of heap (input + output buffers
+     * simultaneously) and could trigger an out-of-memory condition or degraded service.
+     *
+     * <p>This inner guard rejects uploads that exceed a safe in-memory threshold and
+     * returns HTTP 413 (Payload Too Large) before any processing begins, giving callers
+     * a clear, actionable error rather than an opaque server failure.
+     *
+     * <p>Real-world GPS output TSV files are typically well under 50 MB; 100 MB is
+     * generous without exposing the server to heap exhaustion.
+     */
+    static final long MAX_UPLOAD_BYTES = 100L * 1024 * 1024; // 100 MB
+
+    /**
      * Characters that must be stripped from a user-supplied filename before
      * embedding it in an HTTP header value.  Carriage return, newline, and
      * double-quote can all be used for HTTP response-splitting or header-injection
@@ -68,6 +87,16 @@ public class WebController {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest()
                     .body(errorResource("File cannot be empty"));
+        }
+
+        // SEC: Guard against heap exhaustion from very large uploads.
+        // The file is processed entirely in-memory; reject payloads that exceed the
+        // safe in-memory threshold before any processing begins.
+        if (file.getSize() > MAX_UPLOAD_BYTES) {
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                    .body(errorResource("File size " + file.getSize() + " bytes exceeds the maximum permitted "
+                            + "upload size of " + MAX_UPLOAD_BYTES + " bytes ("
+                            + (MAX_UPLOAD_BYTES / (1024 * 1024)) + " MB)"));
         }
 
         if (tags == null || tags.isEmpty()) {

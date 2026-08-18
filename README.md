@@ -21,7 +21,7 @@ You can also download the published GPS directly from SNOMED International at ht
 
 ## Prerequisites
 
-*   **Java Runtime Environment (JRE)**: Version 17 or higher.
+*   **Java Development Kit (JDK)**: Version 25 or higher to build; a Java 25 runtime to run the packaged JAR.
 *   **Maven**: For building the project.
 *   **SNOMED CT Release Files**: You will need the standard RF2 release files (Concepts, Descriptions, and Language Preferences) or the full release ZIP.
 

@@ -19,12 +19,48 @@ Branch: `claude/java-25-upgrade-gtpzj1`
 Good news: no `SecurityManager`, `sun.misc.Unsafe`, `finalize()`, custom classloaders, agents, or
 reflection into JDK internals. The application code itself is not the risk — the toolchain is.
 
-## The blocking constraint
+## Verified empirically on JDK 25 (correction to an earlier assumption)
 
-Spring Boot 3.2.3 predates Java 25 (and is out of OSS support). Its Spring Framework 6.1 baseline,
-Byte Buddy, ASM and Mockito versions do not understand class file version 69, so
-`spring-boot-starter-test` will fail before any of our code runs. **The Java 25 move is really a
-Spring Boot upgrade with a compiler-level change attached.**
+A JDK 25 build environment is now available (see *Toolchain setup* below), so the following is
+measured rather than predicted. **An earlier draft of this plan claimed that Spring Boot 3.2.3's old
+Byte Buddy/ASM/Mockito versions would block the build on Java 25. That is wrong for this project.**
+
+Measured on OpenJDK 25.0.3:
+
+| Configuration | Result |
+|---|---|
+| Unchanged `pom.xml` (Boot 3.2.3, `release` 17), built and tested on JDK 25 | **BUILD SUCCESS**, 114/114 tests pass |
+| Boot 3.2.3, old plugins, `release` **25** | **BUILD SUCCESS**, 114/114 tests pass, class file major version 69 |
+| Boot 3.5.16 + plugin bumps + `java.version` 25 | **BUILD SUCCESS**, 114/114 tests pass, no warnings |
+
+Why the pessimistic prediction was wrong: the JDK-25 bytecode is emitted by `javac` itself, not by
+the compiler plugin's bundled ASM, so `maven-compiler-plugin` 3.11.0 handles `release 25` fine. And
+the Byte Buddy/Mockito concern never materialises because **these tests use no Mockito and no Spring
+test context** — they are plain Jupiter assertions over file I/O, so the fragile machinery is never
+loaded. Surefire 3.0.0 also forked cleanly.
+
+This substantially de-risks the work: the language-level change alone is viable in isolation, and the
+Spring Boot upgrade is a *maintenance* decision (3.2.3 is old and unsupported) rather than a
+prerequisite. Both are still worth doing, and both are verified to work together — but they can now
+be sequenced and reverted independently without fear.
+
+## Toolchain setup
+
+Dedicated JDK vendor hosts (`api.adoptium.net`, `corretto.aws`, `cdn.azul.com`,
+`download.java.net`, `download.bell-sw.com`, `api.foojay.io`) are blocked by the agent proxy in this
+environment, and the GitHub API is scoped to this repository only, so Temurin tarballs cannot be
+downloaded here. The Ubuntu archive *is* reachable and noble ships OpenJDK 25:
+
+```
+apt-get update && apt-get install -y openjdk-25-jdk-headless   # 25.0.3+9-2~24.04.2
+update-alternatives --set java  /usr/lib/jvm/java-25-openjdk-amd64/bin/java
+update-alternatives --set javac /usr/lib/jvm/java-25-openjdk-amd64/bin/javac
+```
+
+Note that `JAVA_HOME` remains pointed at JDK 21 in this image, and Maven honours `JAVA_HOME` over
+`update-alternatives`. Either export `JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64` or pass it per
+invocation. For CI, `actions/setup-java` with Temurin 25 is the normal route and is unaffected by
+this environment's proxy policy.
 
 ## Step 1 — Spring Boot upgrade to the latest 3.x (do this first, still on Java 17/21)
 
@@ -128,8 +164,10 @@ worth one real upload test rather than trusting unit tests.
 4. Start the Boot app and exercise the web UI upload path (`src/main/resources/static/index.html`)
    against a real RF2 file.
 
-Note: this container has only JDK 21 available, so steps 1–4 of the verification cannot be executed
-here. Whoever runs the upgrade needs a JDK 25 (or CI, below) to prove it.
+Steps 1 and 2 are **already confirmed** on OpenJDK 25.0.3 in this environment (114/114 tests green,
+class file major version 69) for both the language-level-only change and the full Boot 3.5.16
+upgrade. Steps 3 and 4 remain genuinely manual — the tests cover file parsing, not the CLI argument
+surface or the 500 MB multipart upload path.
 
 ## Step 6 — Documentation and CI
 
@@ -147,6 +185,7 @@ Recommended commit sequence, each independently buildable:
 3. Language level 17 → 25, remove duplicated source/target settings.
 4. README/docs + CI workflow.
 
-Rollback is per-commit. The main risks are (a) a transitive dependency without a Java 25-ready
-release, surfacing in step 1, and (b) the unverifiable-here runtime behaviour of the large-file
-upload path, which is why step 5.4 is a manual check rather than a test assertion.
+Rollback is per-commit. With steps 1–3 now verified green on JDK 25, the residual risk is narrower
+than first assessed: the large-file upload path and the CLI subcommands are exercised by neither the
+unit tests nor this verification, which is why steps 5.3 and 5.4 stay manual checks. No transitive
+dependency turned out to lack a Java 25-ready release.

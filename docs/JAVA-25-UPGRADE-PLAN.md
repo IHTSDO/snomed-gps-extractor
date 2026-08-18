@@ -2,6 +2,13 @@
 
 Branch: `claude/java-25-upgrade-gtpzj1`
 
+> **Status: applied.** All four steps below have been implemented on this branch as separate
+> commits: Spring Boot 3.5.16, plugin bumps, `java.version` 25, and README/CI. Verified on
+> OpenJDK 25.0.3 — 114/114 tests pass, class file major version 69, the `list-validations` CLI
+> entry point runs, and the web server starts (`java -jar ... server`, Tomcat on 8080, `GET /`
+> returns 200) with no `sun.misc.Unsafe` or dynamic-agent warnings. The remaining unverified
+> item is a real large-file RF2 upload through the web UI, which needs a genuine release file.
+
 ## Current state
 
 | Item | Value |

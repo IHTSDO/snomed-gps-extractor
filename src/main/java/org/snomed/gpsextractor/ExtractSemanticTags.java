@@ -41,6 +41,7 @@ public class ExtractSemanticTags {
             Path outputPath = inputPath.getParent() == null
                     ? Paths.get(generateOutputFileName(String.join("_", semanticTags)))
                     : inputPath.getParent().resolve(generateOutputFileName(String.join("_", semanticTags)));
+            validateOutputDirectory(outputPath);
             processFile(inputFile, outputPath.toString(), semanticTags, activeOnly);
 
         } catch (IllegalArgumentException e) {
@@ -77,6 +78,34 @@ public class ExtractSemanticTags {
         }
     }
 
+    /**
+     * Validates that the directory that will contain the output file exists and is
+     * writable by the current process.
+     *
+     * <p>Without this check, a write to a non-writable directory produces an
+     * unhelpful {@link java.nio.file.AccessDeniedException} deep inside the I/O
+     * stack.  Checking up front gives the caller a clear, actionable error message
+     * before any work is performed.
+     *
+     * @param outputPath the resolved output file path
+     * @throws IllegalArgumentException if the parent directory does not exist or is not writable
+     */
+    private static void validateOutputDirectory(Path outputPath) {
+        Path parentDir = outputPath.getParent();
+        if (parentDir == null) {
+            // Output is in the current working directory — use "." for the check
+            parentDir = Paths.get(".");
+        }
+        if (!Files.exists(parentDir)) {
+            throw new IllegalArgumentException(
+                "Output directory does not exist: " + parentDir.toAbsolutePath());
+        }
+        if (!Files.isWritable(parentDir)) {
+            throw new IllegalArgumentException(
+                "Output directory is not writable: " + parentDir.toAbsolutePath());
+        }
+    }
+
     private static String generateOutputFileName(String semanticTag) {
         return sanitizeFileName(semanticTag + OUTPUT_FILE_SUFFIX);
     }
@@ -88,6 +117,10 @@ public class ExtractSemanticTags {
     private static void processFile(String inputFile, String outputFile, String[] semanticTags, boolean activeOnly)
             throws IOException {
         Path outputPath = Paths.get(outputFile);
+
+        // Guard: verify the output directory is writable before doing any work.
+        // This produces a clear error for programmatic callers as well as CLI callers.
+        validateOutputDirectory(outputPath);
 
         // Delete the path if it exists (whether file or directory)
         if (Files.exists(outputPath)) {

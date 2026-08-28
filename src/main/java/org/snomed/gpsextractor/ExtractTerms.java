@@ -76,6 +76,7 @@ public class ExtractTerms {
         boolean activeOnly              = false;
         String  inactiveSinceDate       = null;
         String  implementationGuideFile = null;
+        String  readmeTemplateFile      = null;
 
         int argIndex = 0;
         while (argIndex < args.length && args[argIndex].startsWith("--")) {
@@ -108,6 +109,16 @@ public class ExtractTerms {
                         return;
                     }
                     break;
+                case "--readme-template":
+                    argIndex++;
+                    if (argIndex < args.length) {
+                        readmeTemplateFile = args[argIndex];
+                        argIndex++;
+                    } else {
+                        System.err.println("Error: --readme-template requires a file path argument");
+                        return;
+                    }
+                    break;
                 default:
                     System.err.println("Error: Unknown option: " + args[argIndex]);
                     printUsage();
@@ -134,6 +145,19 @@ public class ExtractTerms {
             }
         }
 
+        // Validate README template if provided
+        if (readmeTemplateFile != null) {
+            Path rtPath = Paths.get(readmeTemplateFile).toAbsolutePath().normalize();
+            if (!Files.exists(rtPath)) {
+                System.err.println("Error: README template file not found: " + readmeTemplateFile);
+                return;
+            }
+            if (!Files.isReadable(rtPath)) {
+                System.err.println("Error: README template file is not readable: " + readmeTemplateFile);
+                return;
+            }
+        }
+
         if (fileArgs.length >= 1 && fileArgs[0].toLowerCase().endsWith(".zip")) {
             // ZIP input → produce output package
             String inputZip = fileArgs[0];
@@ -151,7 +175,10 @@ public class ExtractTerms {
 
             if (outputPath.toLowerCase().endsWith(".zip")) {
                 // Output is a ZIP package (normal production mode)
-                processZip(inputZip, outputPath, activeOnly, inactiveSinceDate, implementationGuideFile);
+                processZip(inputZip, outputPath, activeOnly, inactiveSinceDate, implementationGuideFile,
+                    readmeTemplateFile != null
+                        ? Paths.get(readmeTemplateFile).toAbsolutePath().normalize()
+                        : null);
             } else {
                 // Output is a raw TSV path — extract and write TSV directly
                 processZipToTsv(inputZip, outputPath, activeOnly, inactiveSinceDate);
@@ -270,7 +297,7 @@ public class ExtractTerms {
 
     private static void processZip(String zipFile, String outputZip,
             boolean activeOnly, String inactiveSinceDate,
-            String implementationGuideFile) throws IOException {
+            String implementationGuideFile, Path readmeTemplatePath) throws IOException {
 
         if (!isValidZip(zipFile)) {
             System.err.println("Error: Input file is not a valid ZIP file: " + zipFile);
@@ -312,7 +339,8 @@ public class ExtractTerms {
             Map<String, String>  preferredTerms   = new HashMap<>();
             readDescriptions(descriptionsFile, descPrefs, fsnDescriptions, preferredTerms, concepts);
 
-            writeZipPackage(outputZip, concepts, fsnDescriptions, preferredTerms, implementationGuideFile);
+            writeZipPackage(outputZip, concepts, fsnDescriptions, preferredTerms,
+                implementationGuideFile, readmeTemplatePath);
 
         } finally {
             deleteTempDir(tempDir);
@@ -567,7 +595,8 @@ public class ExtractTerms {
             Map<String, String> concepts,
             Map<String, String> fsnDescriptions,
             Map<String, String> preferredTerms,
-            String implementationGuideFile) throws IOException {
+            String implementationGuideFile,
+            Path readmeTemplatePath) throws IOException {
 
         String tsvEntryName       = Paths.get(outputZipPath.replaceAll("\\.zip$", ".txt"))
                                         .getFileName().toString();
@@ -599,7 +628,11 @@ public class ExtractTerms {
 
             // 2. Readme.txt
             zos.putNextEntry(new ZipEntry("Readme.txt"));
-            w.write(buildReadmeContent(effectiveDate, entryNames));
+            if (readmeTemplatePath != null) {
+                w.write(buildReadmeContent(effectiveDate, entryNames, readmeTemplatePath));
+            } else {
+                w.write(buildReadmeContent(effectiveDate, entryNames));
+            }
             w.flush();
             zos.closeEntry();
 
@@ -622,6 +655,15 @@ public class ExtractTerms {
     // README builder
     // =========================================================================
 
+    /** Placeholder token substituted with the current calendar year (e.g. {@code 2026}). */
+    static final String TEMPLATE_PLACEHOLDER_YEAR              = "{YEAR}";
+    /** Placeholder token substituted with the formatted release month and year (e.g. {@code January 2026}). */
+    static final String TEMPLATE_PLACEHOLDER_MONTH_YEAR        = "{MONTH_YEAR}";
+    /** Placeholder token substituted with the raw release date in YYYYMMDD format (e.g. {@code 20260101}). */
+    static final String TEMPLATE_PLACEHOLDER_DATE              = "{DATE}";
+    /** Placeholder token substituted with the newline-separated, indented list of ZIP entry filenames. */
+    static final String TEMPLATE_PLACEHOLDER_DIRECTORY_LISTING = "{DIRECTORY_LISTING}";
+
     /**
      * Builds the Readme.txt content for a GPS release package.
      *
@@ -637,7 +679,7 @@ public class ExtractTerms {
             + "This document forms part of the SNOMED International Global Patient Set (GPS) release, "
             + "distributed by International Health Terminology Standards Development Organisation, "
             + "trading as SNOMED International, and is subject to the terms of the Creative Commons "
-            + "Attribution 4.0 International Public License (https://creativecommons.org/licenses/by/4.0/).\n\n"
+            + "Attribution-NoDerivatives 4.0 International Public License (https://creativecommons.org/licenses/by-nd/4.0/).\n\n"
             + "Any modification of this document (including without limitation the removal or modification "
             + "of this notice) is prohibited without the express written permission of SNOMED International.\n\n"
             + "Any copy of this document that is not obtained directly from SNOMED International is not "
@@ -653,6 +695,59 @@ public class ExtractTerms {
             + "\n";
     }
 
+    /**
+     * Builds the Readme.txt content from an external UTF-8 plain-text template file.
+     *
+     * <p>The template must contain all four of the following placeholder tokens,
+     * which are substituted at runtime:
+     * <ul>
+     *   <li>{@code {YEAR}}               — the current calendar year (e.g. {@code 2026})</li>
+     *   <li>{@code {MONTH_YEAR}}         — the release month and year (e.g. {@code January 2026})</li>
+     *   <li>{@code {DATE}}               — the release date in YYYYMMDD format (e.g. {@code 20260101})</li>
+     *   <li>{@code {DIRECTORY_LISTING}}  — the newline-separated, indented list of ZIP entry filenames</li>
+     * </ul>
+     *
+     * <p>If any placeholder is absent, or if the template file cannot be read, an
+     * {@link IOException} is thrown immediately — the tool will never silently produce
+     * a malformed or incomplete Readme.txt.
+     *
+     * @param effectiveDateYYYYMMDD the release date in YYYYMMDD format
+     * @param zipEntryNames         the names of the files that will be in the output ZIP
+     * @param templatePath          path to the UTF-8 plain-text template file
+     * @return the fully rendered Readme.txt content
+     * @throws IOException if the template file cannot be read, or is missing required placeholders
+     */
+    static String buildReadmeContent(String effectiveDateYYYYMMDD, List<String> zipEntryNames,
+            Path templatePath) throws IOException {
+
+        String template = Files.readString(templatePath, StandardCharsets.UTF_8);
+        // Normalise Windows (CRLF) and legacy Mac (CR) line endings to Unix LF so that
+        // templates edited on any platform produce consistent output.
+        template = template.replace("\r\n", "\n").replace("\r", "\n");
+
+        // Validate that all required placeholders are present before doing any substitution.
+        // Fail loudly with a descriptive message rather than silently producing broken output.
+        List<String> missing = new ArrayList<>();
+        if (!template.contains(TEMPLATE_PLACEHOLDER_YEAR))              missing.add(TEMPLATE_PLACEHOLDER_YEAR);
+        if (!template.contains(TEMPLATE_PLACEHOLDER_MONTH_YEAR))        missing.add(TEMPLATE_PLACEHOLDER_MONTH_YEAR);
+        if (!template.contains(TEMPLATE_PLACEHOLDER_DATE))              missing.add(TEMPLATE_PLACEHOLDER_DATE);
+        if (!template.contains(TEMPLATE_PLACEHOLDER_DIRECTORY_LISTING)) missing.add(TEMPLATE_PLACEHOLDER_DIRECTORY_LISTING);
+        if (!missing.isEmpty()) {
+            throw new IOException(
+                "README template is missing required placeholder(s): "
+                + String.join(", ", missing) + " — file: " + templatePath);
+        }
+
+        String directoryListing = zipEntryNames.stream()
+            .reduce("", (a, n) -> a + "\n    " + n);
+
+        return template
+            .replace(TEMPLATE_PLACEHOLDER_YEAR,              String.valueOf(LocalDate.now().getYear()))
+            .replace(TEMPLATE_PLACEHOLDER_MONTH_YEAR,        formatDateAsMonthYear(effectiveDateYYYYMMDD))
+            .replace(TEMPLATE_PLACEHOLDER_DATE,              effectiveDateYYYYMMDD)
+            .replace(TEMPLATE_PLACEHOLDER_DIRECTORY_LISTING, directoryListing);
+    }
+
     // =========================================================================
     // Helpers
     // =========================================================================
@@ -666,6 +761,7 @@ public class ExtractTerms {
     private static void printUsage() {
         System.err.println("Usage: extract-terms [--active-only] [--inactive-since YYYYMMDD]");
         System.err.println("                     [--implementation-guide <file>]");
+        System.err.println("                     [--readme-template <template-file>]");
         System.err.println("                     <rf2-zip-file> [output-zip-file]");
         System.err.println("   or: extract-terms <concepts> <descriptions> <preferences> <output-tsv>");
     }

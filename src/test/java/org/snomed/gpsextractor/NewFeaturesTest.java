@@ -43,14 +43,14 @@ class NewFeaturesTest {
         String[] lines = readme.split("\n");
         for (String line : lines) {
             String trimmed = line.trim();
-            assertFalse(trimmed.startsWith("https://creativecommons.org") && trimmed.equals("https://creativecommons.org/licenses/by/4.0/"),
+            assertFalse(trimmed.startsWith("https://creativecommons.org") && trimmed.equals("https://creativecommons.org/licenses/by-nd/4.0/"),
                 "Creative Commons URL must not appear as a standalone line");
             assertFalse(trimmed.startsWith("https://www.snomed.org/gps") && trimmed.equals("https://www.snomed.org/gps"),
                 "SNOMED GPS URL must not appear as a standalone line");
         }
 
         // URLs must still be present somewhere in the content
-        assertTrue(readme.contains("https://creativecommons.org/licenses/by/4.0/"),
+        assertTrue(readme.contains("https://creativecommons.org/licenses/by-nd/4.0/"),
             "README must contain the Creative Commons URL");
         assertTrue(readme.contains("https://www.snomed.org/gps"),
             "README must contain the SNOMED GPS URL");
@@ -61,7 +61,7 @@ class NewFeaturesTest {
         String readme = ExtractTerms.buildReadmeContent("20260301", List.of("data.txt", "Readme.txt"));
 
         // Each URL line should be preceded by a '(' and followed by a ')'
-        assertTrue(readme.contains("(https://creativecommons.org/licenses/by/4.0/)"),
+        assertTrue(readme.contains("(https://creativecommons.org/licenses/by-nd/4.0/)"),
             "Creative Commons URL should be enclosed in parentheses inline with text");
         assertTrue(readme.contains("(https://www.snomed.org/gps)"),
             "SNOMED GPS URL should be enclosed in parentheses inline with text");

@@ -376,4 +376,4 @@ The following security measures are applied:
 Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
 
 ---
-&copy; 2025 SNOMED International.
+&copy; 2026 SNOMED International.
